@@ -43,9 +43,19 @@ if [[ $ttl -le 128 && $ttl -gt 64 ]]; then
 fi
 echo -e "───────────────────────────────────────────"
 echo -e "\t${green}[+]${end} Escaneando puertos..."
-nmapeo="$(nmap -p- --open -T5 -v -n -Pn 127.0.0.1;wait; > /dev/null 2>&1;)"
-ports="$(echo $nmapeo | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')"
-ip_address="$(echo $nmapeo | grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | sort -u | head -n 1)"
-echo $ports
-echo $ip_address
+nmap -p1-500 --open -T5 -v -n -Pn $1 -oG nmapeo > /dev/null 2>&1
+ports="$(cat nmapeo | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')"
+echo -e "\n\t${green}[+]${end} Puertos: ${red}$ports${end}"
+echo -e "───────────────────────────────────────────"
+if [[ "$ports" == *"80"* ]]; then
+  echo -e "\t${green}[+]${end} Analizando tecnologías web...\n"
+  whatweb $1
+else
+  echo -e "\t${red}[-]${end} Sin servicio web"
+fi
+echo -e "───────────────────────────────────────────"
+echo -e "\t${green}[+]${end} Analizando puertos...\n"
+nmap -sCV -p$ports $1 -oN puertos > /dev/null 2>&1
+cat puertos | grep 'PORT' -A 50
+echo -e "───────────────────────────────────────────"
 tput cnorm; exit 0
