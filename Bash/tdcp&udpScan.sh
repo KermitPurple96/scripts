@@ -35,7 +35,7 @@ netmask=$(echo $1 | cut -d '/' -f 2)
 network=$(echo $1 | cut -d '.' -f 1-3)
 net16=$(echo $1 | cut -d '.' -f 1-2)
 prot=$2
-ports=(21 22 23 25 53 80 110 143 443 445 587 995 993 3306 5985 8080 8081)
+ports=(21 22 23 25 53 80 88 110 143 443 445 587 995 993 3306 5985 8080 8081)
 tput civis;
 
 function scan(){
