@@ -28,7 +28,7 @@ network=192.168.1
 ports=(21 22 25 80 110 143 443 445 587 995 993 3306 5985 8080 8081)
 tput civis;
 
-for i in $(seq 1 50); do
+for i in $(seq 1 254); do
    echo -ne "\n${blue}[+]${end} Enumerando hosts de ${green}$network.1/24:"
    echo -ne "\n\n\t${green}[+]${end} Hosts activos:"
    for host in ${hostsactivos[@]}; do
