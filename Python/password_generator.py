@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import itertools
+import itertools, signal, sys
 from pwn import *
 
 # Palabra base
