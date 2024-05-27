@@ -55,6 +55,7 @@ wget https://raw.githubusercontent.com/gladiatx0r/Powerless/master/Powerless.bat
 wget https://raw.githubusercontent.com/rasta-mouse/Sherlock/master/Sherlock.ps1
 wget https://raw.githubusercontent.com/itm4n/PrivescCheck/master/PrivescCheck.ps1
 wget https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Privesc/PowerUp.ps1
+git clone https://github.com/AonCyberLabs/Windows-Exploit-Suggester
 
 # DUMP 
 wget https://github.com/gentilkiwi/mimikatz/releases/download/2.2.0-20220919/mimikatz_trunk.zip
