@@ -42,7 +42,7 @@ wget https://github.com/antonioCoco/ConPtyShell/releases/download/1.5/ConPtyShel
 wget https://github.com/samratashok/nishang/archive/refs/tags/v0.7.6.zip
 git clone https://github.com/Kevin-Robertson/Invoke-TheHash
 git clone https://github.com/leechristensen/Random
-
+wget https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1
 
 ## PRIV ESC
 wget https://raw.githubusercontent.com/411Hall/JAWS/master/jaws-enum.ps1
