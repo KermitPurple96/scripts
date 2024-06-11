@@ -10,7 +10,7 @@ import argparse
 def print_listener(port):
     print("\n********** Listener **********\n")
     print(f"stty raw -echo; (stty size; cat) | nc -lvnp {port}")
-    print(f"rlwrap nc -nlvp {port}")
+    print(f"rlwrap -cAr nc -nlvp {port}")
 
 def print_tty():
     print("\n********** tty **********\n")
