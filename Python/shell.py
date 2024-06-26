@@ -183,7 +183,7 @@ def print_nc(ip, port):
 
 def main():
     if len(sys.argv) < 4:
-        print("Usage: script.py <IP> <PORT> <SHELL_TYPE>")
+        print("Usage: shell <IP> <PORT> <SHELL_TYPE>")
         print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
         sys.exit(1)
 
