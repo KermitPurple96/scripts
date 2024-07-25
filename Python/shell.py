@@ -408,6 +408,13 @@ def print_trans(ip, port, protocol, file):
 
 
 def main(use_macro):
+
+    ip = sys.argv[1]
+
+    if ip == "-paths":
+        print_paths()
+        sys.exit(0)
+
     if len(sys.argv) < 4:
         print("\n\tUsage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
         print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
@@ -427,16 +434,14 @@ def main(use_macro):
 
         print("Transfers: \n\t-paths \n\t-installs \n\t-ftp \n\t-scp \n\t-socat \n\t-nc \n\t-http \n\t-smb ")
         print("\nExamples:\n")
-        print(f"\tshell 192.168.1.72 4444 -paths")
+        print(f"\tshell -paths")
         print(f"\tshell 192.168.45.170 4444 -trans -smb rubeus.exe")
         print(f"\tshell 192.168.45.170 4444 -trans -http mimikatz.exe")
-
-        
 
 
         sys.exit(1)
 
-    ip = sys.argv[1]
+   
     port = sys.argv[2]
     shell_type = sys.argv[3].lower()
 
@@ -444,10 +449,7 @@ def main(use_macro):
     if shell_type == "-trans":
         protocol = sys.argv[4].lower()
         file = sys.argv[5]
-        if protocol == "-paths":
-            print_paths()
-            sys.exit(0)
-
+       
 
     else:
 
