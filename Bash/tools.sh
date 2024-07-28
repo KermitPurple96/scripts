@@ -6,6 +6,7 @@ wget https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_window
 wget https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_windows_amd64.exe
 
 git clone https://github.com/r3motecontrol/Ghostpack-CompiledBinaries ./ghostpack
+git clone https://github.com/Flangvik/SharpCollection
 
 wget https://github.com/ropnop/impacket_static_binaries/releases/download/0.9.22.dev-binaries/impacket_linux_binaries.tar.gz
 mkdir impacket
@@ -13,7 +14,7 @@ tar -xf impacket_linux_binaries.tar.gz -C impacket
 rm impacket_linux_binaries.tar.gz
 
 wget https://github.com/ropnop/impacket_static_binaries/releases/download/0.9.22.dev-binaries/impacket_windows_binaries.zip
-unzip impacket_windows_binaries.zip 
+unzip impacket_windows_binaries.zip
 mv dist impacket_ropnop
 rm impacket_windows_binaries.zip
 
@@ -24,15 +25,12 @@ wget https://download.sysinternals.com/files/SysinternalsSuite.zip
 unzip SysinternalsSuite.zip -d sysinternals
 rm SysinternalsSuite.zip
 
-git clone https://github.com/Flangvik/SharpCollection
-
 wget https://eternallybored.org/misc/netcat/netcat-win32-1.11.zip
 wget https://eternallybored.org/misc/netcat/netcat-win32-1.12.zip
 unzip netcat-win32-1.11.zip
 unzip netcat-win32-1.12.zip
 rm netcat-win32-1.11.zip
 rm netcat-win32-1.12.zip
-
 
 git clone https://github.com/S3cur3Th1sSh1t/PowerSharpPack
 git clone https://github.com/NetSPI/PowerUpSQL
@@ -57,7 +55,7 @@ wget https://raw.githubusercontent.com/itm4n/PrivescCheck/master/PrivescCheck.ps
 wget https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Privesc/PowerUp.ps1
 git clone https://github.com/AonCyberLabs/Windows-Exploit-Suggester
 
-# DUMP 
+# DUMP
 wget https://github.com/gentilkiwi/mimikatz/releases/download/2.2.0-20220919/mimikatz_trunk.zip
 wget https://github.com/gentilkiwi/kekeo/releases/download/2.2.0-20211214/kekeo.zip
 wget https://github.com/AlessandroZ/LaZagne/releases/download/v2.4.5/LaZagne.exe
@@ -75,16 +73,18 @@ wget https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/dev/Recon/Pow
 wget https://github.com/the-useless-one/pywerview/archive/refs/tags/v0.6.zip
 
 ## HOUNDS
-git clone https://github.com/dirkjanm/BloodHound.py
 wget https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/Collectors/SharpHound.ps1
-wget https://github.com/BloodHoundAD/SharpHound/releases/download/v2.4.1/SharpHound-v2.4.1.zip
+wget https://github.com/BloodHoundAD/SharpHound/releases/download/v2.5.1/SharpHound-v2.5.1.zip
 https://github.com/BloodHoundAD/BloodHound/blob/master/Collectors/SharpHound.exe
+
+wget https://github.com/ParrotSec/mimikatz/blob/master/x64/mimikatz.exe
+wget https://github.com/ParrotSec/mimikatz/blob/master/Win32/mimikatz.exe -O mimikatz32.exe
 
 # DNS dump
 git clone https://github.com/dirkjanm/adidnsdump
 git clone https://github.com/dirkjanm/krbrelayx
 
-## RCE 
+## RCE
 https://github.com/rasta-mouse/MiscTools
 https://github.com/klezVirus/CheeseTools
 wget https://raw.githubusercontent.com/HarmJ0y/Misc-PowerShell/master/Invoke-PsExec.ps1
@@ -95,7 +95,10 @@ git clone https://github.com/Hackndo/sprayhound
 wget https://raw.githubusercontent.com/dafthack/DomainPasswordSpray/master/DomainPasswordSpray.ps1
 
 # pivoting
-git clone https://github.com/sysdream/ligolo
+
+wget https://github.com/nicocha30/ligolo-ng/releases/download/v0.6.2/ligolo-ng_proxy_0.6.2_linux_amd64.tar.gz
+wget https://github.com/nicocha30/ligolo-ng/releases/download/v0.6.2/ligolo-ng_agent_0.6.2_linux_amd64.tar.gz
+wget https://github.com/nicocha30/ligolo-ng/releases/download/v0.6.2/ligolo-ng_agent_0.6.2_windows_amd64.zip
 
 #pkinit
 git clone https://github.com/dirkjanm/PKINITtools
