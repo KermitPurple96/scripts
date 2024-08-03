@@ -77,11 +77,11 @@ git clone https://github.com/leechristensen/Random
 wget https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1
 
 ## PRIV ESC
-
-wget https://raw.githubusercontent.com/411Hall/JAWS/master/jaws-enum.ps1
 wget https://github.com/peass-ng/PEASS-ng/releases/download/20240526-eac1a3fa/winPEASany.exe
 wget https://github.com/peass-ng/PEASS-ng/releases/download/20240526-eac1a3fa/winPEASx64.exe
 wget https://github.com/peass-ng/PEASS-ng/releases/download/20240526-eac1a3fa/winPEASx86.exe
+
+wget https://raw.githubusercontent.com/411Hall/JAWS/master/jaws-enum.ps1
 wget https://raw.githubusercontent.com/gladiatx0r/Powerless/master/Powerless.bat
 wget https://raw.githubusercontent.com/rasta-mouse/Sherlock/master/Sherlock.ps1
 wget https://raw.githubusercontent.com/itm4n/PrivescCheck/master/PrivescCheck.ps1
