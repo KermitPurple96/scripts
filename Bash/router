@@ -1,0 +1,53 @@
+#!/bin/bash
+#source https://m2rc.rocks/posts/intercept/#moving-to-ws01
+
+
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # Sin color
+
+# Verificar que se ha pasado un argumento
+if [ "$#" -ne 1 ]; then
+    echo -e "${RED}[Error]${NC} Debes proporcionar la red objetivo como argumento. Ejemplo: ./script.sh 192.168.180.0"
+    exit 1
+fi
+
+TARGET_NETWORK=$1
+
+# Obtener la IP de la interfaz eth0
+IP=$(ifconfig | grep eth0 -A1 | grep inet | awk '{print $2}')
+if [ -z "$IP" ]; then
+    echo -e "${RED}[Error]${NC} No se pudo obtener la IP de la interfaz eth0."
+    exit 1
+fi
+
+# Obtener la red de la IP
+SUBNET=$(echo "$IP" | awk -F'.' '{print $1"."$2"."$3".0/24"}')
+
+# Habilitar reenvío de IP
+echo -e "${GREEN}[+]${NC} Habilitando el reenvío de IP..."
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
+
+# Configuración de iptables
+echo -e "${GREEN}[+]${NC} Configurando reglas de iptables..."
+
+# Regla para permitir el tráfico establecido y relacionado
+sudo iptables -A FORWARD -i tun0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+# Regla para permitir el tráfico desde eth0 hacia tun0
+sudo iptables -A FORWARD -i eth0 -o tun0 -j ACCEPT
+# Regla para enmascarar el tráfico desde la subred calculada
+sudo iptables -t nat -A POSTROUTING -s "$SUBNET" -o tun0 -j MASQUERADE
+
+# Instrucciones para la máquina Windows
+echo -e "\n${YELLOW}[+]${NC} Ejecuta en Windows:"
+echo -e "${YELLOW}\t route add $TARGET_NETWORK mask 255.255.255.0 $IP${NC}"
+
+# Nota adicional
+echo -e "${YELLOW}[+]${NC} IP del Kali: $IP"
+
+# Instrucciones para limpiar la configuración
+echo -e "\n${RED}[+]${NC} Para borrar las reglas de iptables y deshabilitar el reenvío de IP:"
+echo -e "${RED}\t sudo iptables -F${NC}"
+echo -e "${RED}\t sudo sh -c 'echo 0 > /proc/sys/net/ipv4/ip_forward'${NC}"
