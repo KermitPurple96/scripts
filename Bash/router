@@ -1,6 +1,4 @@
 #!/bin/bash
-#source https://m2rc.rocks/posts/intercept/#moving-to-ws01
-
 
 # Colores
 RED='\033[0;31m'
@@ -44,10 +42,13 @@ sudo iptables -t nat -A POSTROUTING -s "$SUBNET" -o tun0 -j MASQUERADE
 echo -e "\n${YELLOW}[+]${NC} Ejecuta en Windows:"
 echo -e "${YELLOW}\t route add $TARGET_NETWORK mask 255.255.255.0 $IP${NC}"
 
-# Nota adicional
-echo -e "${YELLOW}[+]${NC} IP del Kali: $IP"
+echo -e "\n${RED}[+]${NC} Muestra las tablas de enrutamiento:"
+echo -e "${RED}\t route print ${NC}"
+
+echo -e "\n${RED}[+]${NC} Para borrar las reglas de enrutamiento de windows:"
+echo -e "${RED}\t route delete $TARGET_NETWORK${NC}"
 
 # Instrucciones para limpiar la configuración
-echo -e "\n${RED}[+]${NC} Para borrar las reglas de iptables y deshabilitar el reenvío de IP:"
+echo -e "\n${RED}[+]${NC} Para borrar las reglas de iptables y deshabilitar el reenvío de IP en kali:"
 echo -e "${RED}\t sudo iptables -F${NC}"
 echo -e "${RED}\t sudo sh -c 'echo 0 > /proc/sys/net/ipv4/ip_forward'${NC}"
