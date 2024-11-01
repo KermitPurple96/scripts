@@ -32,7 +32,7 @@ def perform_nslookups(domain, ip, visited):
     queries = [
         domain,
         f"-type=srv _ldap._tcp.dc._msdcs.{domain}",
-        f"-q=srv _ldap._tcp.dc._msdcs.contoso.local",
+        f"-q=srv _ldap._tcp.dc._msdcs.{domain}",
         f"-type=srv _gc._tcp.{domain}",
         f"-type=srv _kerberos._tcp.{domain}",
         f"-type=srv _kerberos._udp.{domain}",
