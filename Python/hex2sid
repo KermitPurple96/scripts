@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+import sys
+
+def hex_sid_to_string_sid(hex_sid):
+    sid_bytes = bytes.fromhex(hex_sid[2:])  # Ignorar el prefijo "0x"
+    revision = sid_bytes[0]
+    sub_auth_count = sid_bytes[1]
+    identifier_authority = int.from_bytes(sid_bytes[2:8], byteorder='big')
+    sub_authorities = [
+        int.from_bytes(sid_bytes[8 + (i * 4):12 + (i * 4)], byteorder='little')
+        for i in range(sub_auth_count)
+    ]
+    string_sid = f"S-{revision}-{identifier_authority}"
+    for sub_auth in sub_authorities:
+        string_sid += f"-{sub_auth}"
+    return string_sid
+
+if len(sys.argv) != 2:
+    print("Uso: ./script.py <hex_sid>")
+    sys.exit(1)
+
+hex_sid = sys.argv[1]
+sid = hex_sid_to_string_sid(hex_sid)
+print(sid)
