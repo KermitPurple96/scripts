@@ -2,6 +2,11 @@
 # extracts all paths from urls file made with something like https://github.com/hakluke/hakrawler 
 # give urls file as 1st arg and paths file to save the output as 2nd
 # ./pathParser.py urls paths
+# example output:
+# /wp-admin/
+# /wp-admin/admin-ajax.php/
+# /wp-admin/js/
+# /wp-admin/js/password-strength-meter.min.js/
 
 import sys
 from pathlib import Path
