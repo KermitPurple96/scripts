@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # parses URLs extracted from hakrawler removing unwanted and duplicate domains
-# parseUrls.sh urls.txt domain
-# result example:
+# parseUrls.sh urls.txt target_domain
+# example:
+# parseUrls.sh urls.txt inlanefreight
 # http://blog.inlanefreight.local/?page_id=2
 # http://blog.inlanefreight.local/?page_id=2#respond
 # http://blog.inlanefreight.local/wp-admin/admin-ajax.php?action=wpdAddSubscription
