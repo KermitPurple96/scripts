@@ -4,7 +4,7 @@
 # unlike parseUrls.sh it only leaves single routes
 # parseUrls.sh urls.txt target_domain
 # example:
-# parseUrls.sh urls.txt inlanefreight
+# cleanUrls.sh urls.txt inlanefreight
 # http://blog.inlanefreight.local/
 # http://blog.inlanefreight.local/wp-admin/admin-ajax.php
 # http://blog.inlanefreight.local/wp-admin/js/password-strength-meter.min.js
