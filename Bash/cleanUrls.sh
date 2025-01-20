@@ -2,8 +2,9 @@
 
 # parses URLs extracted from hakrawler removing unwanted and duplicate domains 
 # unlike parseUrls.sh it only leaves single routes
-# parseUrls.sh urls.txt domain
-# result example:
+# parseUrls.sh urls.txt target_domain
+# example:
+# parseUrls.sh urls.txt inlanefreight
 # http://blog.inlanefreight.local/
 # http://blog.inlanefreight.local/wp-admin/admin-ajax.php
 # http://blog.inlanefreight.local/wp-admin/js/password-strength-meter.min.js
