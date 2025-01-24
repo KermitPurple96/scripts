@@ -8,6 +8,7 @@ from bs4 import Comment
 import httpx
 from termcolor import colored
 
+# python pykrawler.py http://blog.inlanefreight.local --max-depth 15 --subs --outfile results.txt --filter-non-404
 
 # Almacena las URLs únicas
 visited_urls = set()
