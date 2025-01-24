@@ -7,10 +7,15 @@ from termcolor import colored
 import pyxploitdb
 import semver  # Asegúrate de tener instalada esta librería para comparar versiones.
 import base64
+import xmltodict
+import signal
 
-from wordpress_xmlrpc import Client, AnonymousMethod
-from wordpress_xmlrpc.methods.users import GetUsersBlogs
-from wordpress_xmlrpc.methods.posts import GetPosts
+def sig_handler(sig, frame):
+    print(Fore.YELLOW + "\n\n\t[!] " + Style.RESET_ALL + "Saliendo...\n")
+    sys.exit(0)
+ 
+signal.signal(signal.SIGINT, sig_handler)
+
 
 # Función para comparar versiones
 def is_version_lower(v1, v2):
@@ -21,93 +26,158 @@ def is_version_lower(v1, v2):
 
 
 
-class ListMethods(AnonymousMethod):
+def load_payload(method_name):
     """
-    Clase para invocar el método system.listMethods de manera anónima.
+    Carga el contenido de un archivo externo de payload XML e inserta el método especificado.
     """
-    method_name = "system.listMethods"
-    method_args = ()
+    try:
+        with open("payload_template.xml", "r") as file:
+            xml_payload = file.read()
+            return xml_payload.replace("{methodName}", method_name)
+    except FileNotFoundError:
+        print(colored("[-] Archivo 'payload_template.xml' no encontrado.", "red"))
+        sys.exit(1)
+
+
+
+
+def parse_fault_response(response_text):
+    """
+    Analiza una respuesta de fallo en formato XML.
+    Devuelve el código de error y la descripción si existen.
+    """
+    try:
+        parsed_response = xmltodict.parse(response_text)
+        fault = parsed_response.get('methodResponse', {}).get('fault', {}).get('value', {}).get('struct', {})
+        if fault:
+            fault_code = next((int(member['value']['int']) for member in fault['member'] if member['name'] == 'faultCode'), None)
+            fault_string = next((member['value']['string'] for member in fault['member'] if member['name'] == 'faultString'), None)
+            return fault_code, fault_string
+    except Exception as e:
+        print(colored(f"[-] Error al parsear la respuesta de fallo: {e}", "red"))
+    return None, None
 
 
 def exploit_xmlrpc(xmlrpc_url):
     """
-    Intenta enumerar los métodos disponibles en xmlrpc.php usando un método anónimo.
+    Realiza una solicitud a xmlrpc.php para listar los métodos disponibles y los prueba.
+    No muestra respuestas con código de error 403 o "Insufficient arguments".
     """
+    # Cargar el payload para listar métodos
+    list_methods_payload = load_payload("system.listMethods")
+
+    # Encabezados
+    headers = {
+        "Content-Type": "application/xml",  # Igual que curl
+    }
+
     try:
-        # Crear cliente XML-RPC sin autenticación
-        client = Client(xmlrpc_url, '', '')
+        print(colored(f"[+] Enviando solicitud a {xmlrpc_url} para listar métodos...", "blue"))
+        
+        # Solicitud inicial para listar métodos
+        response = requests.post(xmlrpc_url, headers=headers, data=list_methods_payload, timeout=10)
 
-        # Llamar al método system.listMethods
-        methods = client.call(ListMethods())
+        # Verificar el código de estado
+        if response.status_code == 200:
+            print(colored(f"[+] Métodos disponibles en {xmlrpc_url}:", "green"))
 
-        print(colored(f"[+] Métodos disponibles en {xmlrpc_url}:", "green"))
-        for method in methods:
-            print(f"- {method}")
-    except Exception as e:
+            # Parsear el XML con xmltodict
+            try:
+                parsed_response = xmltodict.parse(response.text)
+                methods = parsed_response['methodResponse']['params']['param']['value']['array']['data']['value']
+                method_list = [method['string'] for method in methods]
+
+                # Guardar métodos disponibles en un archivo
+                
+                
+                with open("methods_available.txt", "w") as file:
+
+                    # Probar cada método disponible
+                    for method in method_list:
+                        # print(colored(f"[+] Probando método: {method}", "yellow"))
+                        method_payload = load_payload(method)
+
+                        try:
+                            method_response = requests.post(
+                                xmlrpc_url, headers=headers, data=method_payload, timeout=10
+                            )
+
+                            # Verificar si hay un fallo en la respuesta
+                            fault_code, fault_string = parse_fault_response(method_response.text)
+                            if fault_code == 403 or (fault_string and "Insufficient arguments" in fault_string):
+                                # Ignorar métodos que devuelvan 403 o argumentos insuficientes
+                                print(colored(f"[-] {method} responded with 403 status or 'Insufficient arguments'", "red"))
+                                continue
+
+                            # Mostrar la respuesta si no es un fallo conocido
+                            if method_response.status_code == 200:
+                                print(colored(f"[+] Respuesta válida para {method}:", "green"))
+                                file.write(method + "\n")
+
+                                #print(method_response.text)
+                            else:
+                                print(colored(f"[-] Método {method} no devolvió una respuesta significativa.", "red"))
+
+                        except requests.RequestException as e:
+                            print(colored(f"[-] Error al probar el método {method}: {e}", "red"))
+                print(colored(f"[+] Métodos guardados en 'methods_available.txt'", "green"))
+            except Exception as parse_error:
+                print(colored(f"[-] Error al parsear el XML: {parse_error}", "red"))
+                print(response.text)  # Imprime la respuesta cruda si hay error al parsear
+
+        else:
+            print(colored(f"[-] Solicitud fallida a {xmlrpc_url} con código de estado {response.status_code}", "red"))
+
+    except requests.RequestException as e:
         print(colored(f"[-] Error al interactuar con {xmlrpc_url}: {e}", "red"))
 
 
 
 
-def discover_cms(url, discovered_paths=set(), themes=set(), plugins=set(), cms_detected=set(), wp_version=None):
+
+def discover_cms(url, themes=set(), plugins=set(), cms_detected=set(), wp_version=None):
     """
-    Detecta CMS, temas, plugins y funcionalidades relacionadas con WordPress.
+    Detecta plugins, temas y funcionalidades relacionadas con WordPress a partir de URLs.
+    Si la URL corresponde a xmlrpc.php, se ejecuta exploit_xmlrpc().
     """
     try:
-        # Realizar una solicitud HTTP a la URL proporcionada
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        html_content = response.text
+        # Verificar si la URL apunta a xmlrpc.php
+        if url.endswith("xmlrpc.php"):
+            print(colored(f"[+] Detectado xmlrpc.php en {url}", "green"))
+            exploit_xmlrpc(url)
+            cms_detected.add("xmlrpc.php")
+            return wp_version
 
-        # Analizar el contenido HTML
-        soup = BeautifulSoup(html_content, 'html.parser')
+        # Realizar solicitud HTTP para analizar el contenido
+        response = requests.head(url, timeout=10)
+        if response.status_code != 200:
+            print(colored(f"[-] URL no válida o inaccesible: {url} (HTTP {response.status_code})", "red"))
+            return wp_version
 
-        # Buscar archivos CSS y JS que puedan indicar temas o plugins, y extraer versiones
-        for script in soup.find_all(['link', 'script'], src=True):
-            href = script.get('src') or script.get('href')
-            full_href = urljoin(url, href)
+        # Detectar temas en la URL
+        if "/wp-content/themes/" in url:
+            theme = url.split("/wp-content/themes/")[1].split("/")[0]
+            version = re.search(r'[\?&]ver=([\d\.]+)', url)
+            version = version.group(1) if version else 'Desconocida'
+            themes.add(f"{theme} (Versión: {version})")
 
-            # Detectar temas en archivos CSS
-            if "/wp-content/themes/" in full_href:
-                theme = full_href.split("/wp-content/themes/")[1].split("/")[0]
-                version = re.search(r'[\?&]ver=([\d\.]+)', full_href)
-                version = version.group(1) if version else 'Desconocida'
-                themes.add(f"{theme} (Versión: {version})")
+        # Detectar plugins en la URL
+        elif "/wp-content/plugins/" in url:
+            plugin = url.split("/wp-content/plugins/")[1].split("/")[0]
+            version = re.search(r'[\?&]ver=([\d\.]+)', url)
+            version = version.group(1) if version else 'Desconocida'
+            plugins.add(f"{plugin} (Versión: {version})")
 
-            # Detectar plugins en archivos CSS o JS
-            elif "/wp-content/plugins/" in full_href:
-                plugin = full_href.split("/wp-content/plugins/")[1].split("/")[0]
-                version = re.search(r'[\?&]ver=([\d\.]+)', full_href)
-                version = version.group(1) if version else 'Desconocida'
-                plugins.add(f"{plugin} (Versión: {version})")
-
-        # Buscar la versión de WordPress en el código fuente
-        if not wp_version:
-            meta_tag = soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'WordPress' in c})
-            if meta_tag:
-                wp_version = meta_tag['content'].split(' ')[1]
-                cms_detected.add(f"WordPress (Versión: {wp_version})")
-
-        # Verificar si se detectó WordPress sin versión
-        if soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'WordPress' in c}):
+        # Detectar WordPress en meta tags (opcional para simplificar)
+        if not wp_version and "wp-" in url:
+            wp_version = "Desconocida"
             cms_detected.add("WordPress")
+            print(colored(f"[+] WordPress detectado en {url}", "green"))
 
-        # Verificar si el archivo xmlrpc.php está presente y habilitado
-        xmlrpc_url = urljoin(url, "xmlrpc.php")
-        if "xmlrpc.php" not in cms_detected:
-            try:
-                # Intentar explotar xmlrpc.php con métodos anónimos
-                exploit_xmlrpc(xmlrpc_url)
-                cms_detected.add("xmlrpc.php")
-                discovered_paths.add(xmlrpc_url)
-                print(colored(f"[+] xmlrpc.php detectado en {xmlrpc_url}", "green"))
-            except Exception as e:
-                print(colored(f"[-] No se pudo interactuar con {xmlrpc_url}: {e}", "red"))
-    except requests.exceptions.RequestException as e:
-        print(f"Error al procesar {url}: {e}", file=sys.stderr)
+    except requests.RequestException as e:
+        print(colored(f"[-] Error al procesar {url}: {e}", "red"))
 
     return wp_version
-
 
 
 
@@ -194,42 +264,6 @@ def search_plugins_and_themes(plugins, themes, wp_version):
 
 
 
-def exploit_xmlrpc(xmlrpc_url, username=None, password=None):
-    """
-    Explota el archivo xmlrpc.php utilizando la biblioteca python-wordpress-xmlrpc.
-    
-    Args:
-        xmlrpc_url (str): URL del archivo xmlrpc.php.
-        username (str, optional): Nombre de usuario para autenticación. Por defecto es None.
-        password (str, optional): Contraseña para autenticación. Por defecto es None.
-    
-    Returns:
-        None
-    """
-    print(colored(f"\n[+] Intentando explotar {xmlrpc_url}", "yellow"))
-
-    try:
-        # Crear un cliente para interactuar con xmlrpc.php
-        client = Client(xmlrpc_url, username, password) if username and password else Client(xmlrpc_url)
-
-        # Enumerar blogs disponibles
-        print(colored("[+] Enumerando blogs disponibles:", "cyan"))
-        blogs = client.call(GetUsersBlogs())
-        for blog in blogs:
-            print(f"  - Blog: {blog['blogName']} ({blog['xmlrpc']})")
-
-        # Si se proporciona usuario/contraseña, intentar enumerar posts
-        if username and password:
-            print(colored("\n[+] Enumerando publicaciones disponibles:", "cyan"))
-            posts = client.call(GetPosts())
-            for post in posts[:5]:  # Limitar a los primeros 5 resultados
-                print(f"  - {post.title}: {post.link}")
-
-    except Exception as e:
-        print(colored(f"[-] Fallo al interactuar con {xmlrpc_url}: {e}", "red"))
-
-
-
 if __name__ == "__main__":
     # Verificar si se proporcionó una URL como argumento
     if len(sys.argv) < 2:
@@ -249,16 +283,13 @@ if __name__ == "__main__":
 
     for target_url in urls:
         target_url = target_url.strip()
-        print(f"Procesando URL: {target_url}")
-        wp_version = discover_cms(target_url, all_discovered_paths, detected_themes, detected_plugins, cms_detected, wp_version)
+        
+        wp_version = discover_cms(target_url, detected_themes, detected_plugins, cms_detected, wp_version)
 
     # Mostrar resultados al finalizar
     if "WordPress" in cms_detected:
         print(colored(f"\n[+] WordPress detectado (Versión: {wp_version})", "green"))
 
-    print("\nRutas descubiertas:")
-    for path in sorted(all_discovered_paths):
-        print(path)
 
     if detected_themes:
         print("\nThemes detectados:")
