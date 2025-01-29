@@ -8,6 +8,8 @@ from datetime import datetime
 
 
 # Configuración del bot
+IP_BANS_FILE = "/home/kermit/ip_bans.txt"  # Archivo donde se guardan las IPs baneadas
+
 TOKEN = ""
 CHANNEL_ID = 
 
@@ -26,17 +28,40 @@ def contar_baneos():
 
         for line in lines:
             if "Ban" in line:
+                ip = line.split()[-1]  # Extraer la IP
+                guardar_ip_baneada(ip)  # Guardar IP en el archivo
+
                 if "sshd" in line:
                     ssh_bans += 1
-                    ssh_ips.add(line.split()[-1])
+                    ssh_ips.add(ip)
                 elif "nextcloud" in line:
                     nextcloud_bans += 1
-                    nextcloud_ips.add(line.split()[-1])
+                    nextcloud_ips.add(ip)
 
     except Exception as e:
         print(f"Error leyendo los logs de fail2ban: {e}")
 
     return ssh_bans, len(ssh_ips), nextcloud_bans, len(nextcloud_ips)
+
+
+# Función para guardar IPs baneadas en un archivo sin duplicarlas
+def guardar_ip_baneada(ip):
+    try:
+        if not os.path.exists(IP_BANS_FILE):
+            open(IP_BANS_FILE, "w").close()  # Crear el archivo si no existe
+
+        # Leer IPs ya registradas para evitar duplicados
+        with open(IP_BANS_FILE, "r") as f:
+            ips_registradas = set(f.read().splitlines())
+
+        if ip not in ips_registradas:
+            with open(IP_BANS_FILE, "a") as f:
+                f.write(ip + "\n")
+            print(f"✅ IP {ip} guardada en {IP_BANS_FILE}")
+
+    except Exception as e:
+        print(f"❌ Error al guardar la IP en el archivo: {e}")
+
 
 # Función para contar ataques detectados por iptables
 def contar_ataques_iptables():
@@ -55,7 +80,7 @@ def contar_ataques_iptables():
     return ports["22"], ports["80"], ports["443"]
 
 
-
+# Monitoreo en tiempo real de baneos en fail2ban
 async def monitor_logs():
     channel = client.get_channel(CHANNEL_ID)
     if channel is None:
@@ -78,6 +103,8 @@ async def monitor_logs():
 
                 for line in lines:
                     if "Ban" in line:
+                        ip = line.split()[-1]  # Extraer la IP
+                        guardar_ip_baneada(ip)  # Guardar IP en archivo
                         await channel.send(f"🚨 **Alerta de seguridad:** {line.strip()}")
 
         except Exception as e:
@@ -86,8 +113,7 @@ async def monitor_logs():
         await asyncio.sleep(5)
 
 
-
-
+# Reporte diario con estadísticas de ataques
 async def enviar_reporte_diario():
     await client.wait_until_ready()
     channel = client.get_channel(CHANNEL_ID)
@@ -121,7 +147,6 @@ async def enviar_reporte_diario():
         await asyncio.sleep(86400)  # Espera 24 horas
 
 
-
 @client.event
 async def on_ready():
     print(f"{client.user} está activo y enviando reportes de seguridad.")
@@ -140,3 +165,4 @@ async def on_ready():
     asyncio.create_task(enviar_reporte_diario())
 
 client.run(TOKEN)
+
