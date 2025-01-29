@@ -6,9 +6,7 @@ import os
 import subprocess
 from datetime import datetime
 
-
-# Configuración del bot
-IP_BANS_FILE = "/home/kermit/ip_bans.txt"  # Archivo donde se guardan las IPs baneadas
+IP_BANS_FILE = "/home/kermit/ip_bans.txt"
 
 TOKEN = ""
 CHANNEL_ID = 
@@ -16,7 +14,6 @@ CHANNEL_ID =
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
-# Función para contar IPs bloqueadas por fail2ban
 def contar_baneos():
     log_file = "/var/log/fail2ban.log"
     ssh_bans, nextcloud_bans = 0, 0
@@ -28,8 +25,8 @@ def contar_baneos():
 
         for line in lines:
             if "Ban" in line:
-                ip = line.split()[-1]  # Extraer la IP
-                guardar_ip_baneada(ip)  # Guardar IP en el archivo
+                ip = line.split()[-1]
+                guardar_ip_baneada(ip)
 
                 if "sshd" in line:
                     ssh_bans += 1
@@ -43,14 +40,11 @@ def contar_baneos():
 
     return ssh_bans, len(ssh_ips), nextcloud_bans, len(nextcloud_ips)
 
-
-# Función para guardar IPs baneadas en un archivo sin duplicarlas
 def guardar_ip_baneada(ip):
     try:
         if not os.path.exists(IP_BANS_FILE):
-            open(IP_BANS_FILE, "w").close()  # Crear el archivo si no existe
+            open(IP_BANS_FILE, "w").close()
 
-        # Leer IPs ya registradas para evitar duplicados
         with open(IP_BANS_FILE, "r") as f:
             ips_registradas = set(f.read().splitlines())
 
@@ -62,8 +56,6 @@ def guardar_ip_baneada(ip):
     except Exception as e:
         print(f"❌ Error al guardar la IP en el archivo: {e}")
 
-
-# Función para contar ataques detectados por iptables
 def contar_ataques_iptables():
     ports = {"22": 0, "80": 0, "443": 0}
     
@@ -79,8 +71,6 @@ def contar_ataques_iptables():
 
     return ports["22"], ports["80"], ports["443"]
 
-
-# Monitoreo en tiempo real de baneos en fail2ban
 async def monitor_logs():
     channel = client.get_channel(CHANNEL_ID)
     if channel is None:
@@ -103,17 +93,23 @@ async def monitor_logs():
 
                 for line in lines:
                     if "Ban" in line:
-                        ip = line.split()[-1]  # Extraer la IP
-                        guardar_ip_baneada(ip)  # Guardar IP en archivo
-                        await channel.send(f"🚨 **Alerta de seguridad:** {line.strip()}")
+                        ip = line.split()[-1]
+                        jail = line.split("[")[-1].split("]")[0]
+
+                        if "Restore Ban" in line:
+                            icono = "🔄"
+                            mensaje = f"**Restore Ban en `{jail}`:** 🔄 La IP `{ip}` ha sido restablecida por Fail2Ban."
+                        else:
+                            icono = "🚨"
+                            mensaje = f"**Alerta de seguridad en `{jail}`:** {icono} La IP `{ip}` ha sido **BANEADA**."
+                            
+                        await channel.send(f"{icono} {mensaje}")
 
         except Exception as e:
             print(f"❌ Error leyendo el archivo de logs: {e}")
 
         await asyncio.sleep(5)
 
-
-# Reporte diario con estadísticas de ataques
 async def enviar_reporte_diario():
     await client.wait_until_ready()
     channel = client.get_channel(CHANNEL_ID)
@@ -140,26 +136,21 @@ async def enviar_reporte_diario():
             )
 
             await channel.send(mensaje)
-
         except Exception as e:
             print(f"❌ Error enviando reporte diario: {e}")
-
-        await asyncio.sleep(86400)  # Espera 24 horas
-
+            
+        await asyncio.sleep(86400)
 
 @client.event
 async def on_ready():
     print(f"{client.user} está activo y enviando reportes de seguridad.")
-    
-    await asyncio.sleep(2)  # Pequeña espera para que se cargue bien el bot
-    
+    await asyncio.sleep(2)
     channel = client.get_channel(CHANNEL_ID)
     
     if channel is None:
         print("❌ Error: No se encontró el canal. Verifica el ID del canal en Discord.")
     else:
         print(f"✅ Canal encontrado: {channel.name} (ID: {CHANNEL_ID})")
-        await channel.send("✅ El bot de monitoreo está funcionando correctamente.")
 
     asyncio.create_task(monitor_logs())
     asyncio.create_task(enviar_reporte_diario())
