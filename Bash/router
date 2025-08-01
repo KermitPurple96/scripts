@@ -8,7 +8,7 @@ NC='\033[0m' # Sin color
 
 # Verificar que se ha pasado un argumento
 if [ "$#" -ne 1 ]; then
-    echo -e "${RED}[Error]${NC} Debes proporcionar la red objetivo como argumento. Ejemplo: ./script.sh 192.168.180.0"
+    echo -e "${RED}[Error]${NC} Debes proporcionar la red objetivo como argumento. Ejemplo: router 192.168.180.0"
     exit 1
 fi
 
