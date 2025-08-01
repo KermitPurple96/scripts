@@ -1,23 +1,26 @@
-#!/bin/bash
+#!/bin/bash 
 
 # Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # Sin color
 
 # Verificar que se ha pasado un argumento
-if [ "$#" -ne 1 ]; then
-    echo -e "${RED}[Error]${NC} Debes proporcionar la red objetivo como argumento. Ejemplo: router 192.168.180.0"
+if [ "$#" -ne 2 ]; then
+    echo -e "${RED}[Error]${NC} Uso: $0 <INTERFAZ> <RED_OBJETIVO>"
+    echo -e "${BLUE}Ejemplo:${NC} $0 eth0 192.168.180.0"
     exit 1
 fi
 
-TARGET_NETWORK=$1
+INTERFACE=$1
+TARGET_NETWORK=$2
 
-# Obtener la IP de la interfaz eth0
-IP=$(ifconfig | grep eth0 -A1 | grep inet | awk '{print $2}')
+# Obtener la IP de la interfaz especificada
+IP=$(ifconfig | grep "$INTERFACE" -A1 | grep inet | awk '{print $2}')
+
 if [ -z "$IP" ]; then
-    echo -e "${RED}[Error]${NC} No se pudo obtener la IP de la interfaz eth0."
+    echo -e "${RED}[Error]${NC} No se pudo obtener la IP de la interfaz $INTERFACE."
     exit 1
 fi
 
@@ -32,21 +35,21 @@ sudo sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
 echo -e "${GREEN}[+]${NC} Configurando reglas de iptables..."
 
 # Regla para permitir el tráfico establecido y relacionado
-sudo iptables -A FORWARD -i tun0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-# Regla para permitir el tráfico desde eth0 hacia tun0
-sudo iptables -A FORWARD -i eth0 -o tun0 -j ACCEPT
+sudo iptables -A FORWARD -i tun0 -o "$INTERFACE" -m state --state RELATED,ESTABLISHED -j ACCEPT
+# Regla para permitir el tráfico desde $INTERFACE hacia tun0
+sudo iptables -A FORWARD -i "$INTERFACE" -o tun0 -j ACCEPT
 # Regla para enmascarar el tráfico desde la subred calculada
 sudo iptables -t nat -A POSTROUTING -s "$SUBNET" -o tun0 -j MASQUERADE
 
 # Instrucciones para la máquina Windows
-echo -e "\n${YELLOW}[+]${NC} Ejecuta en Windows:"
-echo -e "${YELLOW}\t route add $TARGET_NETWORK mask 255.255.255.0 $IP${NC}"
+echo -e "\n${BLUE}[+]${NC} Ejecuta en Windows:"
+echo -e "${BLUE}\t route add $TARGET_NETWORK mask 255.255.255.0 $IP${NC}"
 
-echo -e "\n${RED}[+]${NC} Muestra las tablas de enrutamiento:"
-echo -e "${RED}\t route print ${NC}"
+echo -e "\n${BLUE}[+]${NC} Muestra las tablas de enrutamiento:"
+echo -e "${BLUE}\t route print${NC}"
 
-echo -e "\n${RED}[+]${NC} Para borrar las reglas de enrutamiento de windows:"
-echo -e "${RED}\t route delete $TARGET_NETWORK${NC}"
+echo -e "\n${BLUE}[+]${NC} Para borrar las reglas de enrutamiento de windows:"
+echo -e "${BLUE}\t route delete $TARGET_NETWORK${NC}"
 
 # Instrucciones para limpiar la configuración
 echo -e "\n${RED}[+]${NC} Para borrar las reglas de iptables y deshabilitar el reenvío de IP en kali:"
