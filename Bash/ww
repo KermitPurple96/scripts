@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Verificar si se pasó una URL como argumento
+if [ -z "$1" ]; then
+    echo "Uso: $0 <URL>"
+    exit 1
+fi
+
+URL="$1"
+
+# Realizar la solicitud HTTP con curl
+response=$(curl -s -L "$URL")
+
+# Verificar si curl tuvo éxito
+if [ $? -ne 0 ]; then
+    echo "Error al realizar la solicitud a la URL: $URL"
+    exit 1
+fi
+
+# Lista de CMS y patrones de búsqueda
+declare -A cms_patterns
+cms_patterns[WordPress]='<meta name="generator" content="WordPress ([^"]+)"'
+cms_patterns[Drupal]='<meta name="generator" content="Drupal ([^"]+)"'
+cms_patterns[Joomla]='<meta name="generator" content="Joomla! ([^"]+)"'
+cms_patterns[Magento]='<meta name="generator" content="Magento ([^"]+)"'
+cms_patterns[Shopify]='shopify'
+cms_patterns[Prestashop]='<meta name="generator" content="PrestaShop ([^"]+)"'
+
+# Buscar cada CMS en el HTML del sitio
+for cms in "${!cms_patterns[@]}"; do
+    if [[ $response =~ ${cms_patterns[$cms]} ]]; then
+        version="${BASH_REMATCH[1]}"
+        echo "$cms detectado. Versión: ${version:-No especificada}"
+    fi
+done
+
+# Detectar si ningún CMS coincidió
+if [[ -z $(echo "$response" | grep -E "$(IFS="|"; echo "${cms_patterns[*]}")") ]]; then
+    echo "No se detectó ningún CMS conocido."
+fi
