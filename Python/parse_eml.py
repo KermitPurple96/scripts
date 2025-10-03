@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pip install eml-parser
+
 import sys
 import json
 from eml_parser import EmlParser
